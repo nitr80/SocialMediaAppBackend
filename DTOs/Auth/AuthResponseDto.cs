@@ -1,9 +1,9 @@
+using SocialMediaAppBackend.DTOs.User;
+
 namespace SocialMediaAppBackend.DTOs.Auth;
 
 public class AuthResponseDto
 {
-    public int Id { get; set; }
-    public required string Username { get; set; }
-    public required string Email { get; set; }
-    public required string AuthJwt { get; set; }
+    public required string Token { get; set; }
+    public required UserResponseDto User { get; set; }
 }

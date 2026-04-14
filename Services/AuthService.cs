@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SocialMediaAppBackend.DTOs.Auth;
+using SocialMediaAppBackend.DTOs.User;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Options;
 using SocialMediaAppBackend.Results;
@@ -36,13 +37,19 @@ public class AuthService : IAuthService
                 Error = "Invalid credentials"
             };
         }
+
         
         AuthResponseDto authResponseDto = new AuthResponseDto
         {
-            Id = user.Id,
-            Email = user.Email,
-            Username = user.Username,
-            AuthJwt = GenerateAuthJwt(user)
+            Token = GenerateAuthJwt(user),
+            User = new UserResponseDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Bio = user.Bio,
+                ProfileImageUrl = user.ProfileImageUrl
+            }
         };
 
         return new AuthResult
@@ -75,10 +82,15 @@ public class AuthService : IAuthService
 
         AuthResponseDto authResponseDto = new AuthResponseDto
         {
-            Id = user.Id,
-            Email = user.Email,
-            Username = user.Username,
-            AuthJwt = GenerateAuthJwt(user)
+            Token = GenerateAuthJwt(user),
+            User = new UserResponseDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Bio = user.Bio,
+                ProfileImageUrl = user.ProfileImageUrl
+            }
         };
 
         Console.WriteLine(user.PasswordHash);
