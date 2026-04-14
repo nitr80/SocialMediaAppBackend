@@ -23,7 +23,7 @@ public class AuthController : ControllerBase
 
         if (!authResult.Success)
         {
-            return BadRequest(authResult.Error);
+            return Unauthorized(new { message = authResult.Error});
         }
         
         return Ok(authResult.Data);
@@ -36,7 +36,7 @@ public class AuthController : ControllerBase
 
         if (!authResult.Success)
         {
-            return BadRequest(authResult.Error);
+            return Conflict(new { message = authResult.Error});
         }
         
         return Ok(authResult.Data);
