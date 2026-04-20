@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SocialMediaAppBackend.DTOs.Auth;
-using SocialMediaAppBackend.DTOs.User;
+using SocialMediaAppBackend.Mappings;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Options;
 using SocialMediaAppBackend.Results;
@@ -26,48 +26,28 @@ public class AuthService : IAuthService
         _jwtOptions = options.Value;
     }
 
-    public async Task<AuthResult> LoginAsync(LoginDto loginDto)
+    public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto loginDto)
     {
         User? user = await _appDbContext.Users.FirstOrDefaultAsync(user => user.Username == loginDto.Username);
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
         {
-            return new AuthResult
-            {
-                Success = false,
-                Error = "Invalid credentials"
-            };
+            return Result<AuthResponseDto>.Fail("Invalid credentials");
         }
-
         
         AuthResponseDto authResponseDto = new AuthResponseDto
         {
             Token = GenerateAuthJwt(user),
-            User = new UserResponseDto
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                Bio = user.Bio,
-                ProfileImageUrl = user.ProfileImageUrl
-            }
+            User = UserMappings.ToResponseDto(user)
         };
 
-        return new AuthResult
-        {
-            Success = true,
-            Data = authResponseDto
-        };
+        return Result<AuthResponseDto>.Ok(authResponseDto);
     }
 
-    public async Task<AuthResult> RegisterAsync(RegisterDto registerDto)
+    public async Task<Result<AuthResponseDto>> RegisterAsync(RegisterDto registerDto)
     {
         if (await _appDbContext.Users.AnyAsync(user => user.Email == registerDto.Email || user.Username == registerDto.Username))
         {
-            return new AuthResult
-            {
-                Success = false,
-                Error = "User with this email or username already exists"
-            };
+            return Result<AuthResponseDto>.Fail("User with this email or username already exists");
         }
 
         User user = new User
@@ -83,23 +63,12 @@ public class AuthService : IAuthService
         AuthResponseDto authResponseDto = new AuthResponseDto
         {
             Token = GenerateAuthJwt(user),
-            User = new UserResponseDto
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                Bio = user.Bio,
-                ProfileImageUrl = user.ProfileImageUrl
-            }
+            User = UserMappings.ToResponseDto(user)
         };
 
         Console.WriteLine(user.PasswordHash);
 
-        return new AuthResult
-        {
-            Success = true,
-            Data = authResponseDto
-        };
+        return Result<AuthResponseDto>.Ok(authResponseDto);
     }
 
     private string GenerateAuthJwt(User user)
