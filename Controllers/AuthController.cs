@@ -17,9 +17,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> LoginAsync(LoginDto loginDto)
+    public async Task<ActionResult<AuthResponseDto>> LoginAsync(LoginDto loginDto)
     {
-        AuthResult authResult = await _authService.LoginAsync(loginDto);
+        Result<AuthResponseDto> authResult = await _authService.LoginAsync(loginDto);
 
         if (!authResult.Success)
         {
@@ -30,9 +30,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterAsync(RegisterDto registerDto)
+    public async Task<ActionResult<AuthResponseDto>> RegisterAsync(RegisterDto registerDto)
     {
-        AuthResult authResult = await _authService.RegisterAsync(registerDto);
+        Result<AuthResponseDto> authResult = await _authService.RegisterAsync(registerDto);
 
         if (!authResult.Success)
         {

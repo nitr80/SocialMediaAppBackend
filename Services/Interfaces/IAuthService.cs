@@ -5,6 +5,6 @@ namespace SocialMediaAppBackend.Services.Interfaces;
 
 public interface IAuthService
 {
-    Task<AuthResult> RegisterAsync(RegisterDto registerDto);
-    Task<AuthResult> LoginAsync(LoginDto loginDto);
+    Task<Result<AuthResponseDto>> RegisterAsync(RegisterDto registerDto);
+    Task<Result<AuthResponseDto>> LoginAsync(LoginDto loginDto);
 }
