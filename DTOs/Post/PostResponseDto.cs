@@ -10,5 +10,6 @@ public class PostResponseDto
     public required string Content { get; set; }
     public DateTime CreatedAt { get; set; }
     public int LikeCount { get; set; }
-    public int AuthorId { get; set; }
+    [Required]
+    public required UserResponseDto Author { get; set; }
 }

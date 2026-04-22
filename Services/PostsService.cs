@@ -9,11 +9,11 @@ using SQLitePCL;
 
 namespace SocialMediaAppBackend.Services;
 
-public class PostService : IPostService
+public class PostsService : IPostsService
 {
     private readonly AppDbContext _appDbContext;
 
-    public PostService(AppDbContext appDbContext)
+    public PostsService(AppDbContext appDbContext)
     {
         _appDbContext = appDbContext;
     }
@@ -34,24 +34,28 @@ public class PostService : IPostService
         return Result<PostResponseDto>.Ok(PostMappings.ToResponseDto(post));
     }
 
-    public async Task<Result<PostResponseDto>> DeletePostById(int id, int userId)
+    public async Task<Result<bool>> DeletePostById(int postId, int userId)
     {
-        Post post = await _appDbContext.Posts.FirstAsync(p => p.Id == id);
-        _appDbContext.Posts.Remove(post);
-        await _appDbContext.SaveChangesAsync();
+        int affected = await _appDbContext.Posts
+            .Where(p => p.Id == postId && p.AuthorId == userId)
+            .ExecuteDeleteAsync();
 
-        if (post.AuthorId != userId)
+        if (affected == 0)
         {
-            return Result<PostResponseDto>.Fail("User not authorized!");
+            return Result<bool>.Fail("Not found or not authorized");
         }
 
-        return Result<PostResponseDto>.Ok(PostMappings.ToResponseDto(post));
+        return Result<bool>.Ok(true);
     }
 
     public async Task<Result<List<PostResponseDto>>> GetAllPosts()
     {
-        List<Post> postList = await _appDbContext.Posts.OrderByDescending(p => p.CreatedAt).ToListAsync();
-        // List<Post> postList = await _appDbContext.Posts.OrderByDescending(p => p.CreatedAt).ToListAsync();
+        List<Post> postList = await _appDbContext.Posts
+            .Include(p => p.Author)
+            .Include(p =>  p.Likes)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+            
         List<PostResponseDto> postResponseDtoList = new List<PostResponseDto>();
         
         foreach (Post post in postList)
@@ -62,14 +66,12 @@ public class PostService : IPostService
         return Result<List<PostResponseDto>>.Ok(postResponseDtoList);
     }
 
-    public async Task<Result<PostResponseDto>> GetPostById(int id)
+    public async Task<Result<PostResponseDto>> GetPostById(int postId)
     {
-        Post post = await _appDbContext.Posts.FirstAsync(p => p.Id == id);
-
-        if (post == null)
-        {
-            return Result<PostResponseDto>.Fail("User Null");
-        }
+        Post post = await _appDbContext.Posts
+            .Include(p => p.Author)
+            .Include(p =>  p.Likes)
+            .FirstAsync(p => p.Id == postId);
 
         return Result<PostResponseDto>.Ok(PostMappings.ToResponseDto(post));
     }

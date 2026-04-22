@@ -26,7 +26,8 @@ builder.Services.AddOpenApi();
 
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<IPostsService, PostsService>();
+builder.Services.AddScoped<IUsersService, UsersService>();
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>

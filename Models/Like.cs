@@ -14,5 +14,5 @@ public class Like
     [ForeignKey(nameof(PostId))]
     public Post Post { get; set; } = null!;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LikedAt { get; set; } = DateTime.UtcNow;
 }
