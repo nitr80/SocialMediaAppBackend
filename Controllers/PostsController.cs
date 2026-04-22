@@ -11,18 +11,18 @@ namespace SocialMediaAppBackend.Controllers;
 [Route("[controller]")]
 public class PostsController : ControllerBase
 {
-    private readonly IPostService _postService;
+    private readonly IPostsService _postsService;
 
-    public PostsController(IPostService postService)
+    public PostsController(IPostsService postsService)
     {
-        _postService = postService;
+        _postsService = postsService;
     }
 
     [Authorize]
     [HttpGet]
     public async Task<ActionResult<List<PostResponseDto>>> GetAll()
     {
-        Result<List<PostResponseDto>> result = await _postService.GetAllPosts();
+        Result<List<PostResponseDto>> result = await _postsService.GetAllPosts();
 
         if (!result.Success)
         {
@@ -37,7 +37,7 @@ public class PostsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<PostResponseDto>> GetById(int id)
     {
-        Result<PostResponseDto> result = await _postService.GetPostById(id);
+        Result<PostResponseDto> result = await _postsService.GetPostById(id);
 
         if (!result.Success)
         {
@@ -52,7 +52,7 @@ public class PostsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<PostResponseDto>> Create(PostRequestDto postRequestDto)
     {
-        Result<PostResponseDto> result = await _postService.CreatePost(postRequestDto, GetUserId());
+        Result<PostResponseDto> result = await _postsService.CreatePost(postRequestDto, GetUserId());
 
         if (!result.Success)
         {
@@ -67,7 +67,7 @@ public class PostsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult> Delete(int id)
     {
-        Result<PostResponseDto> result = await _postService.DeletePostById(id, GetUserId());
+        Result<PostResponseDto> result = await _postsService.DeletePostById(id, GetUserId());
 
         if (!result.Success)
         {

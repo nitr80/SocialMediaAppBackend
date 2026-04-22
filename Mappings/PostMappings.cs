@@ -11,9 +11,9 @@ public static class PostMappings
         {
             Id = post.Id,
             Content = post.Content,
-            AuthorId = post.AuthorId,
+            Author = UserMappings.ToResponseDto(post.Author),
             CreatedAt = post.CreatedAt,
-            LikeCount = post.LikeCount
+            LikeCount = post.Likes.Count,
         };
     }
 }

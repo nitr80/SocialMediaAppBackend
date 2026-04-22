@@ -9,7 +9,6 @@ public class Post
     [Required]
     public string Content { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public int LikeCount { get; set; } = 0;
 
     public int AuthorId { get; set; }
     [ForeignKey(nameof(AuthorId))]

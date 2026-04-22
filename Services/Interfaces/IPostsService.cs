@@ -3,10 +3,10 @@ using SocialMediaAppBackend.Results;
 
 namespace SocialMediaAppBackend.Services.Interfaces;
 
-public interface IPostService
+public interface IPostsService
 {
     public Task<Result<List<PostResponseDto>>> GetAllPosts();
-    public Task<Result<PostResponseDto>> GetPostById(int id);
+    public Task<Result<PostResponseDto>> GetPostById(int postId);
     public Task<Result<PostResponseDto>> CreatePost(PostRequestDto postRequestDto, int userId);
-    public Task<Result<PostResponseDto>> DeletePostById(int id, int userId);
+    public Task<Result<bool>> DeletePostById(int postId, int userId);
 }

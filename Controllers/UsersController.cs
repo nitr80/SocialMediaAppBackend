@@ -1,14 +1,34 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SocialMediaAppBackend.DTOs.User;
+using SocialMediaAppBackend.Results;
+using SocialMediaAppBackend.Services.Interfaces;
 
 namespace SocialMediaAppBackend.Controllers;
 
-public class UsersController
+[ApiController]
+[Route("[controller]")]
+public class UsersController : ControllerBase
 {
+    private readonly IUsersService _usersService;
 
-    [HttpGet("{id}")]
-    public void Get(int id)
+    public UsersController(IUsersService usersService)
     {
-        // do stuff
+        _usersService = usersService;
+    }
+
+    [Authorize]
+    [HttpGet("{id}")]
+    public async Task<ActionResult> GetById(int id)
+    {
+        Result<UserResponseDto> result = await _usersService.GetUserById(id);
+
+        if (!result.Success)
+        {
+            return BadRequest(result.Error);
+        }
+
+        return Ok(result.Data);
     }
 
 }
