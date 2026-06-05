@@ -16,4 +16,13 @@ public static class PostMappings
             LikeCount = post.Likes.Count,
         };
     }
+    
+    public static Post ToPost(PostRequestDto postRequestDto, int authorId)
+    {
+        return new Post
+        {
+            Content = postRequestDto.Content,
+            AuthorId = authorId
+        };
+    }
 }

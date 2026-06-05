@@ -14,6 +14,23 @@ public class LikesService : ILikesService
         _appDbContext = appDbContext;
     }
 
+    public async Task<Result<bool>> GetLike(int postId, int userId)
+    {
+        bool liked = await _appDbContext.Likes
+            .AnyAsync(l => l.PostId == postId && l.UserId == userId);
+
+        return Result<bool>.Ok(liked);
+    }
+
+    public async Task<Result<List<int>>> GetAllLikedPostIdsByUserId(int userId)
+    {
+        List<int> likedPostIdList = await _appDbContext.Likes.Where(l => l.UserId == userId)
+            .Select(l => l.PostId)
+            .ToListAsync();
+
+        return Result<List<int>>.Ok(likedPostIdList);
+    }
+
     public async Task<Result<bool>> LikePost(int postId, int userId)
     {
         bool alreadyLiked = await _appDbContext.Likes

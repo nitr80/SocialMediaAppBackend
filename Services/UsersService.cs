@@ -16,10 +16,10 @@ public class UsersService : IUsersService
         _appDbContext = appDbContext;
     }
 
-    public async Task<Result<UserResponseDto>> GetUserById(int id)
+    public async Task<Result<User>> GetUserById(int id)
     {
         User user = await _appDbContext.Users.FirstAsync(u => u.Id == id);
 
-        return Result<UserResponseDto>.Ok(UserMappings.ToResponseDto(user));
+        return Result<User>.Ok(user);
     }
 }
