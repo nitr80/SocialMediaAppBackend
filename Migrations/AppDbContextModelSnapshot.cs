@@ -32,9 +32,6 @@ namespace SocialMediaAppBackend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("LikeCount")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("ParentPostId")
                         .HasColumnType("INTEGER");
 
@@ -45,6 +42,56 @@ namespace SocialMediaAppBackend.Migrations
                     b.HasIndex("ParentPostId");
 
                     b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("SocialMediaAppBackend.Models.CommentLike", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CommentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LikedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("CommentId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("CommentLikes");
+                });
+
+            modelBuilder.Entity("SocialMediaAppBackend.Models.Like", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LikedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("PostId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("Likes");
                 });
 
             modelBuilder.Entity("SocialMediaAppBackend.Models.Post", b =>
@@ -62,9 +109,6 @@ namespace SocialMediaAppBackend.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("LikeCount")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -127,6 +171,44 @@ namespace SocialMediaAppBackend.Migrations
                     b.Navigation("ParentPost");
                 });
 
+            modelBuilder.Entity("SocialMediaAppBackend.Models.CommentLike", b =>
+                {
+                    b.HasOne("SocialMediaAppBackend.Models.Comment", "Comment")
+                        .WithMany("CommentLikes")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SocialMediaAppBackend.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SocialMediaAppBackend.Models.Like", b =>
+                {
+                    b.HasOne("SocialMediaAppBackend.Models.Post", "Post")
+                        .WithMany("Likes")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SocialMediaAppBackend.Models.User", "User")
+                        .WithMany("Likes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SocialMediaAppBackend.Models.Post", b =>
                 {
                     b.HasOne("SocialMediaAppBackend.Models.User", "Author")
@@ -138,13 +220,22 @@ namespace SocialMediaAppBackend.Migrations
                     b.Navigation("Author");
                 });
 
+            modelBuilder.Entity("SocialMediaAppBackend.Models.Comment", b =>
+                {
+                    b.Navigation("CommentLikes");
+                });
+
             modelBuilder.Entity("SocialMediaAppBackend.Models.Post", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Likes");
                 });
 
             modelBuilder.Entity("SocialMediaAppBackend.Models.User", b =>
                 {
+                    b.Navigation("Likes");
+
                     b.Navigation("Posts");
                 });
 #pragma warning restore 612, 618

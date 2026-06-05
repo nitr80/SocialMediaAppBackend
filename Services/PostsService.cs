@@ -18,20 +18,12 @@ public class PostsService : IPostsService
         _appDbContext = appDbContext;
     }
 
-    public async Task<Result<PostResponseDto>> CreatePost(PostRequestDto postRequestDto, int userId)
+    public async Task<Result<Post>> CreatePost(Post post)
     {
-        User user = await _appDbContext.Users.FirstAsync(u => userId == u.Id);
-
-        Post post = new Post
-        {
-            Content = postRequestDto.Content,
-            Author = user
-        };
-
         await _appDbContext.Posts.AddAsync(post);
         await _appDbContext.SaveChangesAsync();
 
-        return Result<PostResponseDto>.Ok(PostMappings.ToResponseDto(post));
+        return Result<Post>.Ok(post);
     }
 
     public async Task<Result<bool>> DeletePostById(int postId, int userId)
@@ -48,7 +40,7 @@ public class PostsService : IPostsService
         return Result<bool>.Ok(true);
     }
 
-    public async Task<Result<List<PostResponseDto>>> GetAllPosts()
+    public async Task<Result<List<Post>>> GetAllPosts()
     {
         List<Post> postList = await _appDbContext.Posts
             .Include(p => p.Author)
@@ -56,24 +48,17 @@ public class PostsService : IPostsService
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
             
-        List<PostResponseDto> postResponseDtoList = new List<PostResponseDto>();
-        
-        foreach (Post post in postList)
-        {
-            postResponseDtoList.Add(PostMappings.ToResponseDto(post));
-        }
-
-        return Result<List<PostResponseDto>>.Ok(postResponseDtoList);
+        return Result<List<Post>>.Ok(postList);
     }
 
-    public async Task<Result<PostResponseDto>> GetPostById(int postId)
+    public async Task<Result<Post>> GetPostById(int postId)
     {
         Post post = await _appDbContext.Posts
             .Include(p => p.Author)
             .Include(p =>  p.Likes)
             .FirstAsync(p => p.Id == postId);
 
-        return Result<PostResponseDto>.Ok(PostMappings.ToResponseDto(post));
+        return Result<Post>.Ok(post);
     }
     
 }

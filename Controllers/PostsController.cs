@@ -2,6 +2,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAppBackend.DTOs.Post;
+using SocialMediaAppBackend.Mappings;
+using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
 using SocialMediaAppBackend.Services.Interfaces;
 
@@ -22,7 +24,7 @@ public class PostsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<PostResponseDto>>> GetAll()
     {
-        Result<List<PostResponseDto>> result = await _postsService.GetAllPosts();
+        Result<List<Post>> result = await _postsService.GetAllPosts();
 
         if (!result.Success)
         {
@@ -30,14 +32,21 @@ public class PostsController : ControllerBase
             return BadRequest(result.Error);
         }
 
-        return Ok(result.Data);
+        List<PostResponseDto> postResponseDtoList = new List<PostResponseDto>();
+        
+        foreach (Post post in result.Data!)         // Cannot be null because of success
+        {
+            postResponseDtoList.Add(PostMappings.ToResponseDto(post));
+        }
+
+        return Ok(postResponseDtoList);
     }
 
     [Authorize]
     [HttpGet("{id}")]
     public async Task<ActionResult<PostResponseDto>> GetById(int id)
     {
-        Result<PostResponseDto> result = await _postsService.GetPostById(id);
+        Result<Post> result = await _postsService.GetPostById(id);
 
         if (!result.Success)
         {
@@ -45,14 +54,16 @@ public class PostsController : ControllerBase
             return BadRequest(result.Error);
         }
 
-        return Ok(result.Data);
+        return Ok(PostMappings.ToResponseDto(result.Data!));
     }
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult<PostResponseDto>> Create(PostRequestDto postRequestDto)
+    public async Task<ActionResult> Create(PostRequestDto postRequestDto)
     {
-        Result<PostResponseDto> result = await _postsService.CreatePost(postRequestDto, GetUserId());
+        Post post = PostMappings.ToPost(postRequestDto, User.GetUserId());
+
+        Result<Post> result = await _postsService.CreatePost(post);
 
         if (!result.Success)
         {
@@ -60,14 +71,14 @@ public class PostsController : ControllerBase
             return BadRequest(result.Error);
         }
 
-        return Ok(result.Data);
+        return Ok();
     } 
 
     [Authorize]
     [HttpDelete("{id}")]
     public async Task<ActionResult> Delete(int id)
     {
-        Result<PostResponseDto> result = await _postsService.DeletePostById(id, GetUserId());
+        Result<bool> result = await _postsService.DeletePostById(id, User.GetUserId());
 
         if (!result.Success)
         {
@@ -75,17 +86,5 @@ public class PostsController : ControllerBase
         }
 
         return Ok();
-    }
-
-    private int GetUserId()
-    {
-        string? value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        if (!int.TryParse(value, out int userId))
-        {
-            throw new Exception("Invalid token user id");
-        }
-
-        return userId;
     }
 }

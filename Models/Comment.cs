@@ -19,4 +19,6 @@ public class Comment
     [ForeignKey(nameof(ParentPostId))]
     public Post ParentPost { get; set; } = null!;
 
+    public ICollection<CommentLike> CommentLikes { get; set; } = new List<CommentLike>();
+
 }

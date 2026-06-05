@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAppBackend.DTOs.User;
+using SocialMediaAppBackend.Mappings;
+using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
 using SocialMediaAppBackend.Services.Interfaces;
 
@@ -21,14 +23,14 @@ public class UsersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult> GetById(int id)
     {
-        Result<UserResponseDto> result = await _usersService.GetUserById(id);
+        Result<User> result = await _usersService.GetUserById(id);
 
         if (!result.Success)
         {
             return BadRequest(result.Error);
         }
 
-        return Ok(result.Data);
+        return Ok(UserMappings.ToResponseDto(result.Data!));
     }
 
 }
