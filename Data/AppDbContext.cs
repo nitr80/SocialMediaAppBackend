@@ -8,6 +8,7 @@ public class AppDbContext : DbContext
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Like> Likes { get; set; }
     public DbSet<CommentLike> CommentLikes { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -22,5 +23,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Like>().HasIndex(l => new {l.PostId, l.UserId}).IsUnique();
 
         modelBuilder.Entity<CommentLike>().HasIndex(l => new {l.CommentId, l.UserId}).IsUnique();
+
+        modelBuilder.Entity<RefreshToken>().HasIndex(x => x.Token).IsUnique();
     }
 }

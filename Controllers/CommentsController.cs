@@ -8,14 +8,15 @@ using SocialMediaAppBackend.Mappings;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
 using SocialMediaAppBackend.Services;
+using SocialMediaAppBackend.Services.Interfaces;
 
 [ApiController]
 [Route("[controller]")]
 public class CommentsController : ControllerBase
 {
-    private readonly CommentsService _commentsService;
+    private readonly ICommentsService _commentsService;
 
-    public CommentsController(CommentsService commentsService)
+    public CommentsController(ICommentsService commentsService)
     {
         _commentsService = commentsService;
     }
@@ -24,7 +25,7 @@ public class CommentsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult> Create(CommentRequestDto commentRequestDto)
     {
-        Comment comment = CommentMappings.ToComment(commentRequestDto);
+        Comment comment = CommentMappings.ToComment(commentRequestDto, User.GetUserId());
         Result<bool> result = await _commentsService.CreateComment(comment);
 
         if (!result.Success)

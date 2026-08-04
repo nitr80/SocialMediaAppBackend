@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace SocialMediaAppBackend.DTOs.User;
+
+using System.ComponentModel.DataAnnotations;
 
 public class UserResponseDto
 {

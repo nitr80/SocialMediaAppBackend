@@ -33,4 +33,31 @@ public class UsersController : ControllerBase
         return Ok(UserMappings.ToResponseDto(result.Data!));
     }
 
+    [Authorize]
+    [HttpPatch("update-bio")]
+    public async Task<ActionResult> AddOrUpdateBio(UserBioRequestDto userBioRequestDto)
+    {
+        Result<bool> result = await _usersService.AddOrUpdateBio(UserMappings.ToBioString(userBioRequestDto), User.GetUserId());
+
+        if (!result.Success)
+        {
+            return BadRequest(result.Error);
+        }
+
+        return Ok();
+    }
+
+    [Authorize]
+    [HttpPatch("update-profile-picture")]
+    public async Task<ActionResult> AddOrUpdateProfilePicture(IFormFile image)
+    {
+        Result<bool> result = await _usersService.AddOrUpdateProfilePicture(image, User.GetUserId());
+
+        if (!result.Success)
+        {
+            return BadRequest(result.Error);
+        }
+
+        return Ok();
+    }
 }

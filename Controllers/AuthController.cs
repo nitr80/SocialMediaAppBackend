@@ -41,4 +41,30 @@ public class AuthController : ControllerBase
         
         return Ok(authResult.Data);
     }
+
+    [HttpPost("refresh")]
+    public async Task<ActionResult<AuthResponseDto>> Refresh(TokenRequestDto requestDto)
+    {
+        Result<AuthResponseDto> authResult = await _authService.Refresh(requestDto);
+
+        if (!authResult.Success)
+        {
+            return Unauthorized(new { message = authResult.Error});
+        }
+
+        return Ok(authResult.Data);
+    }
+
+    [HttpPost("logout")]
+    public async Task<ActionResult> LogoutAsync()
+    {
+        Result<bool> result = await _authService.LogoutAsync(User.GetUserId());
+
+        if (!result.Success)
+        {
+            return Unauthorized(new { message = result.Error});
+        }
+
+        return Ok();
+    }
 }

@@ -14,6 +14,7 @@ public static class PostMappings
             Author = UserMappings.ToResponseDto(post.Author),
             CreatedAt = post.CreatedAt,
             LikeCount = post.Likes.Count,
+            CommentCount = post.Comments.Count
         };
     }
     

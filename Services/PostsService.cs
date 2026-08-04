@@ -45,6 +45,7 @@ public class PostsService : IPostsService
         List<Post> postList = await _appDbContext.Posts
             .Include(p => p.Author)
             .Include(p =>  p.Likes)
+            .Include(p =>  p.Comments)
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
             
@@ -56,6 +57,7 @@ public class PostsService : IPostsService
         Post post = await _appDbContext.Posts
             .Include(p => p.Author)
             .Include(p =>  p.Likes)
+            .Include(p =>  p.Comments)
             .FirstAsync(p => p.Id == postId);
 
         return Result<Post>.Ok(post);
