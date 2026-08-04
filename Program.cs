@@ -29,6 +29,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPostsService, PostsService>();
 builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<ILikesService, LikesService>();
+builder.Services.AddScoped<ICommentsService, CommentsService>();
+builder.Services.AddScoped<ICommentLikesService, CommentLikesService>();
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -115,6 +117,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseStaticFiles();
 
 app.Run();
 

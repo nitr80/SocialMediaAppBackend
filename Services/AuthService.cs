@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -33,10 +34,23 @@ public class AuthService : IAuthService
         {
             return Result<AuthResponseDto>.Fail("Invalid credentials");
         }
-        
+
+        string refreshToken = GenerateRefreshToken();
+
+        RefreshToken refreshTokenEntity = new RefreshToken
+        {
+            Token = refreshToken,
+            UserId = user.Id,
+            Expires = DateTime.UtcNow.AddDays(7)
+        };
+
+        await _appDbContext.RefreshTokens.AddAsync(refreshTokenEntity);
+        await _appDbContext.SaveChangesAsync();
+
         AuthResponseDto authResponseDto = new AuthResponseDto
         {
-            Token = GenerateAuthJwt(user),
+            AccessToken = GenerateAuthJwt(user),
+            RefreshToken = refreshToken,
             User = UserMappings.ToResponseDto(user)
         };
 
@@ -60,15 +74,90 @@ public class AuthService : IAuthService
         await _appDbContext.Users.AddAsync(user);
         await _appDbContext.SaveChangesAsync();
 
+        string refreshToken = GenerateRefreshToken();
+
+        RefreshToken refreshTokenEntity = new RefreshToken
+        {
+            Token = refreshToken,
+            UserId = user.Id,
+            Expires = DateTime.UtcNow.AddDays(7)
+        };
+
+        await _appDbContext.RefreshTokens.AddAsync(refreshTokenEntity);
+        await _appDbContext.SaveChangesAsync();
+
         AuthResponseDto authResponseDto = new AuthResponseDto
         {
-            Token = GenerateAuthJwt(user),
+            AccessToken = GenerateAuthJwt(user),
+            RefreshToken = refreshToken,
             User = UserMappings.ToResponseDto(user)
         };
 
-        Console.WriteLine(user.PasswordHash);
+        // Console.WriteLine(user.PasswordHash);
 
         return Result<AuthResponseDto>.Ok(authResponseDto);
+    }
+
+    public async Task<Result<AuthResponseDto>> Refresh(TokenRequestDto request)
+    {
+        var storedToken = await _appDbContext.RefreshTokens
+            .Include(x => x.User)
+            .FirstOrDefaultAsync(x => x.Token == request.RefreshToken);
+
+        if (storedToken == null ||
+            storedToken.IsUsed ||
+            storedToken.IsRevoked ||
+            storedToken.Expires < DateTime.UtcNow)
+        {
+            return Result<AuthResponseDto>.Fail("Invalid refresh token");
+        }
+
+        storedToken.IsUsed = true;
+
+        User user = storedToken.User;
+
+        string newAccessToken = GenerateAuthJwt(user);
+        string newRefreshToken = GenerateRefreshToken();
+
+        var newRefreshEntity = new RefreshToken
+        {
+            Token = newRefreshToken,
+            UserId = user.Id,
+            Expires = DateTime.UtcNow.AddDays(7)
+        };
+
+        _appDbContext.RefreshTokens.Add(newRefreshEntity);
+        await _appDbContext.SaveChangesAsync();
+
+        AuthResponseDto authResponseDto = new AuthResponseDto
+        {
+            User = UserMappings.ToResponseDto(user),
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshToken
+        };
+
+        return Result<AuthResponseDto>.Ok(authResponseDto);
+    }
+
+    public async Task<Result<bool>> LogoutAsync(int userId)
+    {
+        User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return Result<bool>.Fail("User not found");
+        }
+
+        List<RefreshToken> refreshTokenList = await _appDbContext.RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked).ToListAsync();
+
+        foreach (RefreshToken refreshToken in refreshTokenList)
+        {
+            refreshToken.IsRevoked = true;
+        }
+
+        await _appDbContext.SaveChangesAsync();
+
+        return Result<bool>.Ok(true);
     }
 
     private string GenerateAuthJwt(User user)
@@ -83,12 +172,21 @@ public class AuthService : IAuthService
         };
 
         JwtSecurityToken token = new JwtSecurityToken(
-            issuer: _jwtOptions.Issuer, 
-            audience: _jwtOptions.Audience, 
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(tokenLifetimeInMinutes),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private string GenerateRefreshToken()
+    {
+        byte[] bytes = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+
+        return Convert.ToBase64String(bytes);
     }
 }

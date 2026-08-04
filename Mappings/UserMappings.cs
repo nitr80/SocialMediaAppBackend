@@ -16,4 +16,9 @@ public static class UserMappings
             ProfileImageUrl = user.ProfileImageUrl  
         };
     }
+
+    public static string ToBioString(UserBioRequestDto userBioRequestDto)
+    {
+        return userBioRequestDto.Bio;
+    }
 }

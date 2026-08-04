@@ -6,7 +6,9 @@ namespace SocialMediaAppBackend.DTOs.Auth;
 public class AuthResponseDto
 {
     [Required]
-    public required string Token { get; set; }
+    public required string AccessToken { get; set; }
+    [Required]
+    public required string RefreshToken { get; set; }
     [Required]
     public required UserResponseDto User { get; set; }
 }

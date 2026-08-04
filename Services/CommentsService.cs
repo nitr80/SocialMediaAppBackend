@@ -26,6 +26,7 @@ public class CommentsService : ICommentsService
     public async Task<Result<List<Comment>>> GetCommentsByPostId(int postId)
     {
         List<Comment> commentList = await _appDbContext.Comments
+            .Where(c => c.ParentPostId == postId)
             .Include(c => c.Author)
             .Include(c => c.CommentLikes)
             .OrderByDescending(c => c.CreatedAt)
