@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using SocialMediaAppBackend.Middleware;
 using SocialMediaAppBackend.Options;
 using SocialMediaAppBackend.Services;
 using SocialMediaAppBackend.Services.Interfaces;
@@ -112,6 +113,8 @@ app.UseCors("AllowFrontend");
 // Swagger
 app.UseSwagger();
 app.UseSwaggerUI();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
