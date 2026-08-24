@@ -97,7 +97,7 @@ The API will be available on the development URL displayed in the terminal.
 
 ## Configuration
 
-Application configuration can be provided through `appsettings.json`, environment variables, or the ASP.NET Core development configuration.
+Application configuration can be provided through `appsettings.json`.
 
 For local development, configure the required JWT and database settings before starting the application.
 
