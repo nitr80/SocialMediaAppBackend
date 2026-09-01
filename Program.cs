@@ -8,7 +8,6 @@ using SocialMediaAppBackend.Options;
 using SocialMediaAppBackend.Services;
 using SocialMediaAppBackend.Services.Interfaces;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 var jwtOptions = builder.Configuration.GetSection("JwtOptions");
@@ -22,6 +21,12 @@ var dbPath = Path.Join(path, dbFileName);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddHealthChecks();
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -124,6 +129,8 @@ app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 
