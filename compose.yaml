@@ -1,10 +1,59 @@
+# DEVELOPMENT
+
+# services:
+#   api:
+#     build: .
+#     ports:
+#       - "8080:8080"
+
+#     environment:
+#       ASPNETCORE_ENVIRONMENT: Docker
+#       DatabaseOptions__Filename: "/app/data/social-media-app.db"
+#       JwtOptions__Key: "V8x!pQ9@zL3#kT7$wR6&nM2%aB8!sD5^fH1skd(@f7$wR6&kj?d8"
+
+#     volumes:
+#       - sqlite-data:/app/data
+
+# volumes:
+#   sqlite-data:
+
+
+
+# DEPLOYMENT
+
 services:
   api:
-    build: .
-    ports:
-      - "8080:8080"
+    image: nitr80/socialmediaappbackend-api:1.0.0
+    # ports:
+    #   - "8080:8080"
+    expose:
+      - "8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_HTTP_PORTS: 8080
+      JwtOptions__Key: ${JWT_SECRET}
+      DatabaseOptions__Filename: "/app/data/social-media-app.db"
     volumes:
       - sqlite-data:/app/data
+    networks:
+      - app-network
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - app-network
 
 volumes:
   sqlite-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  app-network:
