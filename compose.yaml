@@ -23,7 +23,7 @@
 
 services:
   api:
-    image: nitr80/socialmediaappbackend-api:1.0.0
+    image: nitr80/socialmediaappbackend-api:latest
     # ports:
     #   - "8080:8080"
     expose:
