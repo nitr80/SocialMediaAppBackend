@@ -28,7 +28,6 @@ public class PostsController : ControllerBase
 
         if (!result.Success)
         {
-            // result.Success is always true since middleware will handle db errors
             return BadRequest(result.Error);
         }
 
@@ -50,8 +49,7 @@ public class PostsController : ControllerBase
 
         if (!result.Success)
         {
-            // result.Success is always true since middleware will handle db errors
-            return BadRequest(result.Error);
+            return NotFound(new { message = result.Error });
         }
 
         return Ok(PostMappings.ToResponseDto(result.Data!));
@@ -67,7 +65,6 @@ public class PostsController : ControllerBase
 
         if (!result.Success)
         {
-            // result.Success is always true since middleware will handle db errors
             return BadRequest(result.Error);
         }
 
@@ -82,7 +79,12 @@ public class PostsController : ControllerBase
 
         if (!result.Success)
         {
-            return Unauthorized(result.Error);
+            if (result.Error == "Not authorized")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = result.Error });
+            }
+
+            return NotFound(new { message = result.Error });
         }
 
         return Ok();

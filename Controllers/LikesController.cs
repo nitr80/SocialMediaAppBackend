@@ -34,15 +34,29 @@ public class LikesController : ControllerBase
 
     [Authorize]
     [HttpPost("like/{postId}")]
-    public async void LikePost(int postId)
+    public async Task<ActionResult> LikePost(int postId)
     {
-        await _likesService.LikePost(postId, User.GetUserId());
+        Result<bool> result = await _likesService.LikePost(postId, User.GetUserId());
+
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+
+        return Ok();
     }
 
     [Authorize]
     [HttpPost("unlike/{postId}")]
-    public async void UnlikePost(int postId)
+    public async Task<ActionResult> UnlikePost(int postId)
     {
-        await _likesService.UnlikePost(postId, User.GetUserId());
+        Result<bool> result = await _likesService.UnlikePost(postId, User.GetUserId());
+
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
+
+        return Ok();
     }
 }

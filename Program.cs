@@ -12,6 +12,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 var jwtOptions = builder.Configuration.GetSection("JwtOptions");
 
+string jwtKey = jwtOptions["Key"] ?? string.Empty;
+string jwtIssuer = jwtOptions["Issuer"] ?? string.Empty;
+string jwtAudience = jwtOptions["Audience"] ?? string.Empty;
+
+if (string.IsNullOrWhiteSpace(jwtKey) || string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtAudience))
+{
+    throw new InvalidOperationException("JwtOptions:Key, JwtOptions:Issuer and JwtOptions:Audience must be configured.");
+}
+
 var dbFileName = builder.Configuration["DatabaseOptions:FileName"];
 
 var folder = Environment.SpecialFolder.LocalApplicationData;
@@ -59,9 +68,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
 
-            ValidIssuer = jwtOptions["Issuer"],
-            ValidAudience = jwtOptions["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions["Key"]))
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
@@ -137,48 +146,3 @@ app.MapControllers();
 app.UseStaticFiles();
 
 app.Run();
-
-
-// Backend/
-// │
-// ├── Controllers/
-// │   ├── AuthController.cs
-// │   ├── PostsController.cs
-// │   ├── UsersController.cs
-// │   └── FollowsController.cs
-// │
-// ├── DTOs/
-// │   ├── Auth/
-// │   ├── Posts/
-// │   └── Users/
-// │
-// ├── Models/
-// │   ├── User.cs
-// │   ├── Post.cs
-// │   ├── Follow.cs
-// │   └── Like.cs
-// │
-// ├── Data/
-// │   ├── AppDbContext.cs
-// │   └── Migrations/
-// │
-// ├── Services/
-// │   ├── Interfaces/
-// │   │   ├── IAuthService.cs
-// │   │   └── IPostService.cs
-// │   │
-// │   ├── AuthService.cs
-// │   ├── PostService.cs
-// │   └── UserService.cs
-// │
-// ├── Repositories/          (optional)
-// │   ├── Interfaces/
-// │   └── Implementations/
-// │
-// ├── Helpers/
-// │   ├── JwtHelper.cs
-// │   └── PaginationHelper.cs
-// │
-// ├── Middleware/
-// │
-// └── Program.cs

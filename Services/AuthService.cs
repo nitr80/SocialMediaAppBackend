@@ -29,7 +29,9 @@ public class AuthService : IAuthService
 
     public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto loginDto)
     {
-        User? user = await _appDbContext.Users.FirstOrDefaultAsync(user => user.Username == loginDto.Username);
+        string username = loginDto.Username.ToLower();
+
+        User? user = await _appDbContext.Users.FirstOrDefaultAsync(user => user.Username == username);
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
         {
             return Result<AuthResponseDto>.Fail("Invalid credentials");
@@ -59,15 +61,18 @@ public class AuthService : IAuthService
 
     public async Task<Result<AuthResponseDto>> RegisterAsync(RegisterDto registerDto)
     {
-        if (await _appDbContext.Users.AnyAsync(user => user.Email == registerDto.Email || user.Username == registerDto.Username))
+        string email = registerDto.Email.ToLower();
+        string username = registerDto.Username.ToLower();
+
+        if (await _appDbContext.Users.AnyAsync(user => user.Email == email || user.Username == username))
         {
             return Result<AuthResponseDto>.Fail("User with this email or username already exists");
         }
 
         User user = new User
         {
-            Email = registerDto.Email,
-            Username = registerDto.Username,
+            Email = email,
+            Username = username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password)
         };
 
@@ -92,8 +97,6 @@ public class AuthService : IAuthService
             RefreshToken = refreshToken,
             User = UserMappings.ToResponseDto(user)
         };
-
-        // Console.WriteLine(user.PasswordHash);
 
         return Result<AuthResponseDto>.Ok(authResponseDto);
     }

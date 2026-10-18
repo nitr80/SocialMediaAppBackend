@@ -34,18 +34,28 @@ public class CommentLikesController : ControllerBase
 
     [Authorize]
     [HttpPost("like/{commentId}")]
-    public async Task<ActionResult<bool>> Like(int commentId)
+    public async Task<ActionResult> Like(int commentId)
     {
-        await _commentLikesService.LikeComment(commentId, User.GetUserId());
+        Result<bool> result = await _commentLikesService.LikeComment(commentId, User.GetUserId());
+
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
 
         return Ok();
     }
 
     [Authorize]
     [HttpPost("unlike/{commentId}")]
-    public async Task<ActionResult<bool>> Unlike(int commentId)
+    public async Task<ActionResult> Unlike(int commentId)
     {
-        await _commentLikesService.UnlikeComment(commentId, User.GetUserId());
+        Result<bool> result = await _commentLikesService.UnlikeComment(commentId, User.GetUserId());
+
+        if (!result.Success)
+        {
+            return BadRequest(new { message = result.Error });
+        }
 
         return Ok();
     }

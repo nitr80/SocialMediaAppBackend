@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAppBackend.DTOs.Auth;
 using SocialMediaAppBackend.Results;
@@ -55,6 +56,7 @@ public class AuthController : ControllerBase
         return Ok(authResult.Data);
     }
 
+    [Authorize]
     [HttpPost("logout")]
     public async Task<ActionResult> LogoutAsync()
     {

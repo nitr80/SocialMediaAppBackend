@@ -5,7 +5,6 @@ using SocialMediaAppBackend.Mappings;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
 using SocialMediaAppBackend.Services.Interfaces;
-using SQLitePCL;
 
 namespace SocialMediaAppBackend.Services;
 
@@ -28,13 +27,20 @@ public class PostsService : IPostsService
 
     public async Task<Result<bool>> DeletePostById(int postId, int userId)
     {
+        bool postExists = await _appDbContext.Posts.AnyAsync(p => p.Id == postId);
+
+        if (!postExists)
+        {
+            return Result<bool>.Fail("Post not found");
+        }
+
         int affected = await _appDbContext.Posts
             .Where(p => p.Id == postId && p.AuthorId == userId)
             .ExecuteDeleteAsync();
 
         if (affected == 0)
         {
-            return Result<bool>.Fail("Not found or not authorized");
+            return Result<bool>.Fail("Not authorized");
         }
 
         return Result<bool>.Ok(true);
@@ -54,11 +60,16 @@ public class PostsService : IPostsService
 
     public async Task<Result<Post>> GetPostById(int postId)
     {
-        Post post = await _appDbContext.Posts
+        Post? post = await _appDbContext.Posts
             .Include(p => p.Author)
             .Include(p =>  p.Likes)
             .Include(p =>  p.Comments)
-            .FirstAsync(p => p.Id == postId);
+            .FirstOrDefaultAsync(p => p.Id == postId);
+
+        if (post == null)
+        {
+            return Result<Post>.Fail("Post not found");
+        }
 
         return Result<Post>.Ok(post);
     }

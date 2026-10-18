@@ -47,7 +47,15 @@ public class CommentLikesService : ICommentLikesService
         };
 
         await _appDbContext.CommentLikes.AddAsync(commentLike);
-        await _appDbContext.SaveChangesAsync();
+
+        try
+        {
+            await _appDbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return Result<bool>.Fail("Comment already liked by the user");
+        }
 
         return Result<bool>.Ok(true);
     }

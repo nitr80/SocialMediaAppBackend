@@ -27,7 +27,7 @@ public class UsersController : ControllerBase
 
         if (!result.Success)
         {
-            return BadRequest(result.Error);
+            return NotFound(new { message = result.Error });
         }
 
         return Ok(UserMappings.ToResponseDto(result.Data!));

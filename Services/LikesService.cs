@@ -48,7 +48,15 @@ public class LikesService : ILikesService
         };
 
         await _appDbContext.Likes.AddAsync(like);
-        await _appDbContext.SaveChangesAsync();
+
+        try
+        {
+            await _appDbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return Result<bool>.Fail("Post already liked by the user");
+        }
 
         return Result<bool>.Ok(true);
     }
