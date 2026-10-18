@@ -27,7 +27,7 @@ public class UsersController : ControllerBase
 
         if (!result.Success)
         {
-            return NotFound(new { message = result.Error });
+            return result.ToActionResult(this);
         }
 
         return Ok(UserMappings.ToResponseDto(result.Data!));
@@ -39,12 +39,7 @@ public class UsersController : ControllerBase
     {
         Result<bool> result = await _usersService.AddOrUpdateBio(UserMappings.ToBioString(userBioRequestDto), User.GetUserId());
 
-        if (!result.Success)
-        {
-            return BadRequest(result.Error);
-        }
-
-        return Ok();
+        return result.ToActionResult(this);
     }
 
     [Authorize]
@@ -53,11 +48,6 @@ public class UsersController : ControllerBase
     {
         Result<bool> result = await _usersService.AddOrUpdateProfilePicture(image, User.GetUserId());
 
-        if (!result.Success)
-        {
-            return BadRequest(result.Error);
-        }
-
-        return Ok();
+        return result.ToActionResult(this);
     }
 }

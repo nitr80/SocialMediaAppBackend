@@ -22,7 +22,7 @@ public class UsersService : IUsersService
 
         if (user == null)
         {
-            return Result<User>.Fail("User not found");
+            return Result<User>.Fail("User not found", ErrorKind.NotFound);
         }
 
         return Result<User>.Ok(user);

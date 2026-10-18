@@ -20,7 +20,7 @@ public class CommentLikesController : ControllerBase
     {
         Result<bool> result = await _commentLikesService.GetLike(commentId, User.GetUserId());
 
-        return Ok(result.Data);
+        return result.ToActionResult(this);
     }
 
     [Authorize]
@@ -29,7 +29,7 @@ public class CommentLikesController : ControllerBase
     {
         Result<List<int>> result = await _commentLikesService.GetAllLikedCommentIdsByUserIdAndPostId(User.GetUserId(), postId);
 
-        return Ok(result.Data);
+        return result.ToActionResult(this);
     }
 
     [Authorize]
@@ -38,12 +38,7 @@ public class CommentLikesController : ControllerBase
     {
         Result<bool> result = await _commentLikesService.LikeComment(commentId, User.GetUserId());
 
-        if (!result.Success)
-        {
-            return BadRequest(new { message = result.Error });
-        }
-
-        return Ok();
+        return result.ToActionResult(this);
     }
 
     [Authorize]
@@ -52,11 +47,6 @@ public class CommentLikesController : ControllerBase
     {
         Result<bool> result = await _commentLikesService.UnlikeComment(commentId, User.GetUserId());
 
-        if (!result.Success)
-        {
-            return BadRequest(new { message = result.Error });
-        }
-
-        return Ok();
+        return result.ToActionResult(this);
     }
 }

@@ -28,7 +28,7 @@ public class PostsController : ControllerBase
 
         if (!result.Success)
         {
-            return BadRequest(result.Error);
+            return result.ToActionResult(this);
         }
 
         List<PostResponseDto> postResponseDtoList = new List<PostResponseDto>();
@@ -49,7 +49,7 @@ public class PostsController : ControllerBase
 
         if (!result.Success)
         {
-            return NotFound(new { message = result.Error });
+            return result.ToActionResult(this);
         }
 
         return Ok(PostMappings.ToResponseDto(result.Data!));
@@ -65,7 +65,7 @@ public class PostsController : ControllerBase
 
         if (!result.Success)
         {
-            return BadRequest(result.Error);
+            return result.ToActionResult(this);
         }
 
         return Ok();
@@ -77,16 +77,6 @@ public class PostsController : ControllerBase
     {
         Result<bool> result = await _postsService.DeletePostById(id, User.GetUserId());
 
-        if (!result.Success)
-        {
-            if (result.Error == "Not authorized")
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new { message = result.Error });
-            }
-
-            return NotFound(new { message = result.Error });
-        }
-
-        return Ok();
+        return result.ToActionResult(this);
     }
 }

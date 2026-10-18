@@ -28,12 +28,7 @@ public class CommentsController : ControllerBase
         Comment comment = CommentMappings.ToComment(commentRequestDto, User.GetUserId());
         Result<bool> result = await _commentsService.CreateComment(comment);
 
-        if (!result.Success)
-        {
-            return BadRequest(result.Error);
-        }
-
-        return Ok();
+        return result.ToActionResult(this);
     }
 
     [Authorize]
@@ -44,7 +39,7 @@ public class CommentsController : ControllerBase
 
         if (!result.Success)
         {
-            return BadRequest(result.Error);
+            return result.ToActionResult(this);
         }
 
         List<CommentResponseDto> commentResponseDtoList = new List<CommentResponseDto>();

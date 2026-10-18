@@ -4,6 +4,7 @@ public class Result<T>
 {
     public bool Success { get; set; }
     public string? Error { get; set; }
+    public ErrorKind Kind { get; set; } = ErrorKind.None;
     public T? Data { get; set; }
 
     public static Result<T> Ok(T data)
@@ -15,12 +16,13 @@ public class Result<T>
         };
     }
 
-    public static Result<T> Fail(string error)
+    public static Result<T> Fail(string error, ErrorKind kind = ErrorKind.Validation)
     {
         return new()
         {
             Success = false,
-            Error = error
+            Error = error,
+            Kind = kind
         };
     }
 }

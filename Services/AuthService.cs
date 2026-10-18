@@ -34,7 +34,7 @@ public class AuthService : IAuthService
         User? user = await _appDbContext.Users.FirstOrDefaultAsync(user => user.Username == username);
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
         {
-            return Result<AuthResponseDto>.Fail("Invalid credentials");
+            return Result<AuthResponseDto>.Fail("Invalid credentials", ErrorKind.Unauthorized);
         }
 
         string refreshToken = GenerateRefreshToken();
@@ -66,7 +66,7 @@ public class AuthService : IAuthService
 
         if (await _appDbContext.Users.AnyAsync(user => user.Email == email || user.Username == username))
         {
-            return Result<AuthResponseDto>.Fail("User with this email or username already exists");
+            return Result<AuthResponseDto>.Fail("User with this email or username already exists", ErrorKind.Conflict);
         }
 
         User user = new User
@@ -112,7 +112,7 @@ public class AuthService : IAuthService
             storedToken.IsRevoked ||
             storedToken.Expires < DateTime.UtcNow)
         {
-            return Result<AuthResponseDto>.Fail("Invalid refresh token");
+            return Result<AuthResponseDto>.Fail("Invalid refresh token", ErrorKind.Unauthorized);
         }
 
         storedToken.IsUsed = true;
@@ -148,7 +148,7 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
-            return Result<bool>.Fail("User not found");
+            return Result<bool>.Fail("User not found", ErrorKind.Unauthorized);
         }
 
         List<RefreshToken> refreshTokenList = await _appDbContext.RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked).ToListAsync();

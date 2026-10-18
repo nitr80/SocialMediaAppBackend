@@ -22,12 +22,7 @@ public class AuthController : ControllerBase
     {
         Result<AuthResponseDto> authResult = await _authService.LoginAsync(loginDto);
 
-        if (!authResult.Success)
-        {
-            return Unauthorized(new { message = authResult.Error});
-        }
-        
-        return Ok(authResult.Data);
+        return authResult.ToActionResult(this);
     }
 
     [HttpPost("register")]
@@ -35,12 +30,7 @@ public class AuthController : ControllerBase
     {
         Result<AuthResponseDto> authResult = await _authService.RegisterAsync(registerDto);
 
-        if (!authResult.Success)
-        {
-            return Conflict(new { message = authResult.Error});
-        }
-        
-        return Ok(authResult.Data);
+        return authResult.ToActionResult(this);
     }
 
     [HttpPost("refresh")]
@@ -48,12 +38,7 @@ public class AuthController : ControllerBase
     {
         Result<AuthResponseDto> authResult = await _authService.Refresh(requestDto);
 
-        if (!authResult.Success)
-        {
-            return Unauthorized(new { message = authResult.Error});
-        }
-
-        return Ok(authResult.Data);
+        return authResult.ToActionResult(this);
     }
 
     [Authorize]
@@ -62,11 +47,6 @@ public class AuthController : ControllerBase
     {
         Result<bool> result = await _authService.LogoutAsync(User.GetUserId());
 
-        if (!result.Success)
-        {
-            return Unauthorized(new { message = result.Error});
-        }
-
-        return Ok();
+        return result.ToActionResult(this);
     }
 }

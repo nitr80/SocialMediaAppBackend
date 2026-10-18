@@ -31,7 +31,7 @@ public class PostsService : IPostsService
 
         if (!postExists)
         {
-            return Result<bool>.Fail("Post not found");
+            return Result<bool>.Fail("Post not found", ErrorKind.NotFound);
         }
 
         int affected = await _appDbContext.Posts
@@ -40,7 +40,7 @@ public class PostsService : IPostsService
 
         if (affected == 0)
         {
-            return Result<bool>.Fail("Not authorized");
+            return Result<bool>.Fail("Not authorized", ErrorKind.Forbidden);
         }
 
         return Result<bool>.Ok(true);
@@ -68,7 +68,7 @@ public class PostsService : IPostsService
 
         if (post == null)
         {
-            return Result<Post>.Fail("Post not found");
+            return Result<Post>.Fail("Post not found", ErrorKind.NotFound);
         }
 
         return Result<Post>.Ok(post);
