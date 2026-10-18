@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  namespace: socialmedia
+  name: socialmediaappbackend-api-config
+
+data:
+  ASPNETCORE_ENVIRONMENT: Docker
+  # DatabaseOptions__Filename: social-media-app.db
+  DatabaseOptions__Filename: /app/data/social-media-app.db

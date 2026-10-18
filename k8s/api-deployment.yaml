@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  namespace: socialmedia
+  name: socialmediaappbackend-api
+
+spec:
+  replicas: 3     # not ideal for SQLite, change it to postgres
+
+  selector:
+    matchLabels:
+      app: socialmediaappbackend-api
+
+  template:
+    metadata:
+      labels:
+        app: socialmediaappbackend-api
+
+    spec:
+      containers:
+        - name: socialmediaappbackend-api
+          image: nitr80/socialmediaappbackend-api:latest
+
+          ports:
+            - containerPort: 8080
+          
+          volumeMounts:
+            - name: sqlite-data
+              mountPath: /app/data
+
+          envFrom:
+            - configMapRef:
+                name: socialmediaappbackend-api-config
+                
+          env:
+            - name: JwtOptions__Key
+              valueFrom:
+                secretKeyRef:
+                  name: socialmediaappbackend-api-secret
+                  key: JwtOptions__Key
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+              
+      volumes:
+        - name: sqlite-data
+          persistentVolumeClaim:
+            claimName: socialmediaappbackend-api-data
