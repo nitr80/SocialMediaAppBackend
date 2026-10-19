@@ -1,5 +1,8 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -89,6 +92,41 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddAuthorization();
 
+// Forwarded headers: the API is only reachable through Caddy (compose) or the
+// ingress (k8s), so trust the proxy-supplied X-Forwarded-For outside of local
+// development. This keeps the rate limiter partitioned by real client IP.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+
+    if (!builder.Environment.IsDevelopment())
+    {
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    }
+});
+
+// Rate limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Too many requests. Please try again later." },
+            cancellationToken);
+    };
+
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
+
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -114,6 +152,9 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Must run first so later middleware sees the real client IP.
+app.UseForwardedHeaders();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -126,10 +167,17 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
 
+app.UseRateLimiter();
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    // Refresh tokens are stored as SHA-256 hashes (64 hex chars) as of this
+    // release. Rows written before that hold plaintext, can never match a
+    // hashed lookup, and are removed so they are not kept at rest.
+    db.RefreshTokens.Where(rt => rt.Token.Length != 64).ExecuteDelete();
 }
 
 app.UseMiddleware<ExceptionMiddleware>();

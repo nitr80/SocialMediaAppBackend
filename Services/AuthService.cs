@@ -37,11 +37,16 @@ public class AuthService : IAuthService
             return Result<AuthResponseDto>.Fail("Invalid credentials", ErrorKind.Unauthorized);
         }
 
+        // Drop this user's expired tokens so the table does not grow forever
+        await _appDbContext.RefreshTokens
+            .Where(rt => rt.UserId == user.Id && rt.Expires < DateTime.UtcNow)
+            .ExecuteDeleteAsync();
+
         string refreshToken = GenerateRefreshToken();
 
         RefreshToken refreshTokenEntity = new RefreshToken
         {
-            Token = refreshToken,
+            Token = HashToken(refreshToken),
             UserId = user.Id,
             Expires = DateTime.UtcNow.AddDays(7)
         };
@@ -83,7 +88,7 @@ public class AuthService : IAuthService
 
         RefreshToken refreshTokenEntity = new RefreshToken
         {
-            Token = refreshToken,
+            Token = HashToken(refreshToken),
             UserId = user.Id,
             Expires = DateTime.UtcNow.AddDays(7)
         };
@@ -103,15 +108,27 @@ public class AuthService : IAuthService
 
     public async Task<Result<AuthResponseDto>> Refresh(TokenRequestDto request)
     {
+        string tokenHash = HashToken(request.RefreshToken);
+
         var storedToken = await _appDbContext.RefreshTokens
             .Include(x => x.User)
-            .FirstOrDefaultAsync(x => x.Token == request.RefreshToken);
+            .FirstOrDefaultAsync(x => x.Token == tokenHash);
 
         if (storedToken == null ||
-            storedToken.IsUsed ||
             storedToken.IsRevoked ||
             storedToken.Expires < DateTime.UtcNow)
         {
+            return Result<AuthResponseDto>.Fail("Invalid refresh token", ErrorKind.Unauthorized);
+        }
+
+        // Presenting an already-used token means it may have been stolen:
+        // revoke every active token for this user (reuse detection).
+        if (storedToken.IsUsed)
+        {
+            await _appDbContext.RefreshTokens
+                .Where(rt => rt.UserId == storedToken.UserId && !rt.IsRevoked)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.IsRevoked, true));
+
             return Result<AuthResponseDto>.Fail("Invalid refresh token", ErrorKind.Unauthorized);
         }
 
@@ -124,7 +141,7 @@ public class AuthService : IAuthService
 
         var newRefreshEntity = new RefreshToken
         {
-            Token = newRefreshToken,
+            Token = HashToken(newRefreshToken),
             UserId = user.Id,
             Expires = DateTime.UtcNow.AddDays(7)
         };
@@ -191,5 +208,10 @@ public class AuthService : IAuthService
         rng.GetBytes(bytes);
 
         return Convert.ToBase64String(bytes);
+    }
+
+    private static string HashToken(string token)
+    {
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     }
 }
