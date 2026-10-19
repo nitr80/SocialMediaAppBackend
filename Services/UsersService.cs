@@ -43,21 +43,35 @@ public class UsersService : IUsersService
         return Result<bool>.Ok(true);
     }
 
+    private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
+    private const long MaxImageSizeBytes = 5 * 1024 * 1024;
+
     public async Task<Result<bool>> AddOrUpdateProfilePicture(IFormFile image, int userId)
     {
-        if (image == null)
+        if (image == null || image.Length == 0)
         {
-            return Result<bool>.Fail("Profile picture is null");
+            return Result<bool>.Fail("Profile picture is required", ErrorKind.Validation);
+        }
+
+        if (image.Length > MaxImageSizeBytes)
+        {
+            return Result<bool>.Fail("Profile picture must be 5 MB or smaller", ErrorKind.Validation);
+        }
+
+        string extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+
+        if (!AllowedImageExtensions.Contains(extension))
+        {
+            return Result<bool>.Fail("Only jpg, jpeg, png and webp images are allowed", ErrorKind.Validation);
         }
 
         User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
         {
-            return Result<bool>.Fail("User not found");
+            return Result<bool>.Fail("User not found", ErrorKind.NotFound);
         }
 
-        string extension = Path.GetExtension(image.FileName);
         string fileName = $"{Guid.NewGuid()}{extension}";
 
         string folder = Path.Combine(
