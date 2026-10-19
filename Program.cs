@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -33,6 +34,27 @@ var dbPath = Path.Join(path, dbFileName);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+// Automatic model validation ([ApiController]) otherwise returns the default
+// ValidationProblemDetails shape. Emit the same { message } body as the
+// Result<T> convention so clients parse one error format.
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        string message = string.Join(" ", context.ModelState
+            .SelectMany(entry => entry.Value!.Errors)
+            .Select(error => error.ErrorMessage)
+            .Where(text => !string.IsNullOrWhiteSpace(text)));
+
+        if (string.IsNullOrEmpty(message))
+        {
+            message = "Invalid request";
+        }
+
+        return new BadRequestObjectResult(new { message });
+    };
+});
 
 builder.Services.AddHealthChecks();
 builder.Services
