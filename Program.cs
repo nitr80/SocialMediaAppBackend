@@ -118,15 +118,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
-
-// Swagger
-app.UseSwagger();
-app.UseSwaggerUI();
 
 using (var scope = app.Services.CreateScope())
 {

@@ -11,6 +11,9 @@
 # Environment
 .env
 
+# Kubernetes secrets
+k8s/api-secret.yaml
+
 # Build results
 [Bb]in/
 [Oo]bj/

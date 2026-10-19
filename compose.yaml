@@ -9,7 +9,7 @@
 #     environment:
 #       ASPNETCORE_ENVIRONMENT: Docker
 #       DatabaseOptions__Filename: "/app/data/social-media-app.db"
-#       JwtOptions__Key: "V8x!pQ9@zL3#kT7$wR6&nM2%aB8!sD5^fH1skd(@f7$wR6&kj?d8"
+#       JwtOptions__Key: ${JWT_SECRET}
 
 #     volumes:
 #       - sqlite-data:/app/data

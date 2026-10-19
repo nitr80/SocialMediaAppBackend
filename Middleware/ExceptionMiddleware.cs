@@ -21,12 +21,17 @@ public class ExceptionMiddleware
         {
             _logger.LogError(ex, "Unhandled exception");
 
+            if (httpContext.Response.HasStarted)
+            {
+                throw;
+            }
+
             httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
             httpContext.Response.ContentType = "application/json";
 
             await httpContext.Response.WriteAsJsonAsync(new
             {
-                message = ex.Message
+                message = "An unexpected error occurred"
             });
         }
     }
