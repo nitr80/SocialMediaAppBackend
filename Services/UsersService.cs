@@ -34,7 +34,7 @@ public class UsersService : IUsersService
 
         if (user == null)
         {
-            return Result<bool>.Fail("User not found");
+            return Result<bool>.Fail("User not found", ErrorKind.NotFound);
         }
 
         user.Bio = bio;

@@ -37,7 +37,7 @@ public class CommentLikesService : ICommentLikesService
 
         if (alreadyLiked)
         {
-            return Result<bool>.Fail("Comment already liked by the user");
+            return Result<bool>.Fail("Comment already liked by the user", ErrorKind.Conflict);
         }
 
         CommentLike commentLike = new CommentLike
@@ -54,7 +54,7 @@ public class CommentLikesService : ICommentLikesService
         }
         catch (DbUpdateException)
         {
-            return Result<bool>.Fail("Comment already liked by the user");
+            return Result<bool>.Fail("Comment already liked by the user", ErrorKind.Conflict);
         }
 
         return Result<bool>.Ok(true);
@@ -66,7 +66,7 @@ public class CommentLikesService : ICommentLikesService
 
         if (commentLike == null)
         {
-            return Result<bool>.Fail("Comment already unliked by the user");
+            return Result<bool>.Ok(true);
         }
 
         _appDbContext.CommentLikes.Remove(commentLike);

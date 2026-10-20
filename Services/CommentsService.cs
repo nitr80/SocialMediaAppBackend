@@ -15,12 +15,17 @@ public class CommentsService : ICommentsService
         _appDbContext = appDbContext;
     }
 
-    public async Task<Result<bool>> CreateComment(Comment comment)
+    public async Task<Result<Comment>> CreateComment(Comment comment)
     {
         await _appDbContext.Comments.AddAsync(comment);
         await _appDbContext.SaveChangesAsync();
 
-        return Result<bool>.Ok(true);
+        comment = await _appDbContext.Comments
+            .Include(c => c.Author)
+            .Include(c => c.CommentLikes)
+            .FirstAsync(c => c.Id == comment.Id);
+
+        return Result<Comment>.Ok(comment);
     }
 
     public async Task<Result<List<Comment>>> GetCommentsByPostId(int postId)

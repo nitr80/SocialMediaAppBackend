@@ -51,6 +51,11 @@ public class AuthController : ControllerBase
     {
         Result<bool> result = await _authService.LogoutAsync(User.GetUserId());
 
-        return result.ToActionResult(this);
+        if (!result.Success)
+        {
+            return result.ToActionResult(this);
+        }
+
+        return NoContent();
     }
 }

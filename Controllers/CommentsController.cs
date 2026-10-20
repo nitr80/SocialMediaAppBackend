@@ -23,12 +23,21 @@ public class CommentsController : ControllerBase
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult> Create(CommentRequestDto commentRequestDto)
+    public async Task<ActionResult<CommentResponseDto>> Create(CommentRequestDto commentRequestDto)
     {
         Comment comment = CommentMappings.ToComment(commentRequestDto, User.GetUserId());
-        Result<bool> result = await _commentsService.CreateComment(comment);
+        Result<Comment> result = await _commentsService.CreateComment(comment);
 
-        return result.ToActionResult(this);
+        if (!result.Success)
+        {
+            return result.ToActionResult(this);
+        }
+
+        CommentResponseDto commentResponseDto = CommentMappings.ToResponseDto(result.Data!);
+        return CreatedAtAction(
+            nameof(GetAllByPostId),
+            new { postId = result.Data!.ParentPostId },
+            commentResponseDto);
     }
 
     [Authorize]

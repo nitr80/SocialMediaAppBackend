@@ -38,7 +38,7 @@ public class LikesService : ILikesService
 
         if (alreadyLiked)
         {
-            return Result<bool>.Fail("Post already liked by the user");
+            return Result<bool>.Fail("Post already liked by the user", ErrorKind.Conflict);
         }
 
         Like like = new Like
@@ -55,7 +55,7 @@ public class LikesService : ILikesService
         }
         catch (DbUpdateException)
         {
-            return Result<bool>.Fail("Post already liked by the user");
+            return Result<bool>.Fail("Post already liked by the user", ErrorKind.Conflict);
         }
 
         return Result<bool>.Ok(true);
@@ -67,7 +67,7 @@ public class LikesService : ILikesService
 
         if (like == null)
         {
-            return Result<bool>.Fail("Post is already not liked by the user");
+            return Result<bool>.Ok(true);
         }
 
         _appDbContext.Likes.Remove(like);

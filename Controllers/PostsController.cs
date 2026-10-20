@@ -57,7 +57,7 @@ public class PostsController : ControllerBase
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult> Create(PostRequestDto postRequestDto)
+    public async Task<ActionResult<PostResponseDto>> Create(PostRequestDto postRequestDto)
     {
         Post post = PostMappings.ToPost(postRequestDto, User.GetUserId());
 
@@ -68,7 +68,8 @@ public class PostsController : ControllerBase
             return result.ToActionResult(this);
         }
 
-        return Ok();
+        PostResponseDto postResponseDto = PostMappings.ToResponseDto(result.Data!);
+        return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, postResponseDto);
     } 
 
     [Authorize]
