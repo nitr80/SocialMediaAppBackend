@@ -13,7 +13,7 @@ public static class UserMappings
             Username = user.Username,
             Email = user.Email,
             Bio = user.Bio,
-            ProfileImageUrl = user.ProfileImageUrl  
+            ProfileImageUrl = user.ProfileImageUrl
         };
     }
 

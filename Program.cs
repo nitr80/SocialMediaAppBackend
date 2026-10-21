@@ -1,5 +1,6 @@
 using System.Text;
 using System.Threading.RateLimiting;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
@@ -7,10 +8,13 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using SocialMediaAppBackend.Data;
 using SocialMediaAppBackend.Middleware;
 using SocialMediaAppBackend.Options;
 using SocialMediaAppBackend.Services;
 using SocialMediaAppBackend.Services.Interfaces;
+
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,8 +59,6 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
         return new BadRequestObjectResult(new { message });
     };
 });
-
-builder.Services.AddHealthChecks();
 builder.Services
     .AddHealthChecks()
     .AddDbContextCheck<AppDbContext>();
@@ -80,7 +82,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Options
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
-
 
 // Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

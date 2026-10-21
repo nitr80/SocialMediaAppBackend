@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using SocialMediaAppBackend.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SocialMediaAppBackend.DTOs.Auth;
@@ -18,7 +19,7 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
-    [HttpPost("login")]
+    [HttpPost("Login")]
     [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponseDto>> LoginAsync(LoginDto loginDto)
     {
@@ -27,7 +28,7 @@ public class AuthController : ControllerBase
         return authResult.ToActionResult(this);
     }
 
-    [HttpPost("register")]
+    [HttpPost("Register")]
     [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponseDto>> RegisterAsync(RegisterDto registerDto)
     {
@@ -36,7 +37,7 @@ public class AuthController : ControllerBase
         return authResult.ToActionResult(this);
     }
 
-    [HttpPost("refresh")]
+    [HttpPost("Refresh")]
     [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponseDto>> Refresh(TokenRequestDto requestDto)
     {
@@ -46,7 +47,7 @@ public class AuthController : ControllerBase
     }
 
     [Authorize]
-    [HttpPost("logout")]
+    [HttpPost("Logout")]
     public async Task<ActionResult> LogoutAsync()
     {
         Result<bool> result = await _authService.LogoutAsync(User.GetUserId());

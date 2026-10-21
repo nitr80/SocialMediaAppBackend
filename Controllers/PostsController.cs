@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using SocialMediaAppBackend.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAppBackend.DTOs.Post;
@@ -24,21 +25,14 @@ public class PostsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<PostResponseDto>>> GetAll()
     {
-        Result<List<Post>> result = await _postsService.GetAllPosts();
+        Result<List<PostResponseDto>> result = await _postsService.GetAllPosts();
 
         if (!result.Success)
         {
             return result.ToActionResult(this);
         }
 
-        List<PostResponseDto> postResponseDtoList = new List<PostResponseDto>();
-        
-        foreach (Post post in result.Data!)         // Cannot be null because of success
-        {
-            postResponseDtoList.Add(PostMappings.ToResponseDto(post));
-        }
-
-        return Ok(postResponseDtoList);
+        return Ok(result.Data!);
     }
 
     [Authorize]
@@ -70,7 +64,7 @@ public class PostsController : ControllerBase
 
         PostResponseDto postResponseDto = PostMappings.ToResponseDto(result.Data!);
         return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, postResponseDto);
-    } 
+    }
 
     [Authorize]
     [HttpDelete("{id}")]

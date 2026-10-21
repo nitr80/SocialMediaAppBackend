@@ -214,3 +214,6 @@ FakesAssemblies/
 
 # JetBrains Rider
 *.sln.iml
+
+
+wwwroot/

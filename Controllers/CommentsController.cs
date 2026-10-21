@@ -3,15 +3,15 @@ namespace SocialMediaAppBackend.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAppBackend.DTOs.Comment;
-using SocialMediaAppBackend.DTOs.Post;
+using SocialMediaAppBackend.Extensions;
 using SocialMediaAppBackend.Mappings;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
-using SocialMediaAppBackend.Services;
 using SocialMediaAppBackend.Services.Interfaces;
 
 [ApiController]
-[Route("[controller]")]
+[Route("Posts/{postId}/Comments")]
+[Authorize]
 public class CommentsController : ControllerBase
 {
     private readonly ICommentsService _commentsService;
@@ -21,11 +21,10 @@ public class CommentsController : ControllerBase
         _commentsService = commentsService;
     }
 
-    [Authorize]
     [HttpPost]
-    public async Task<ActionResult<CommentResponseDto>> Create(CommentRequestDto commentRequestDto)
+    public async Task<ActionResult<CommentResponseDto>> CreateNested(int postId, CommentRequestDto commentRequestDto)
     {
-        Comment comment = CommentMappings.ToComment(commentRequestDto, User.GetUserId());
+        Comment comment = CommentMappings.ToComment(commentRequestDto, postId, User.GetUserId());
         Result<Comment> result = await _commentsService.CreateComment(comment);
 
         if (!result.Success)
@@ -35,29 +34,21 @@ public class CommentsController : ControllerBase
 
         CommentResponseDto commentResponseDto = CommentMappings.ToResponseDto(result.Data!);
         return CreatedAtAction(
-            nameof(GetAllByPostId),
+            nameof(GetAllByPostIdNested),
             new { postId = result.Data!.ParentPostId },
             commentResponseDto);
     }
 
-    [Authorize]
-    [HttpGet("{postId}")]
-    public async Task<ActionResult<List<CommentResponseDto>>> GetAllByPostId(int postId)
+    [HttpGet]
+    public async Task<ActionResult<List<CommentResponseDto>>> GetAllByPostIdNested(int postId)
     {
-        Result<List<Comment>> result = await _commentsService.GetCommentsByPostId(postId);
+        Result<List<CommentResponseDto>> result = await _commentsService.GetCommentsByPostId(postId);
 
         if (!result.Success)
         {
             return result.ToActionResult(this);
         }
 
-        List<CommentResponseDto> commentResponseDtoList = new List<CommentResponseDto>();
-        
-        foreach (Comment comment in result.Data!)         // Cannot be null because of success
-        {
-            commentResponseDtoList.Add(CommentMappings.ToResponseDto(comment));
-        }
-
-        return Ok(commentResponseDtoList);
+        return Ok(result.Data!);
     }
 }

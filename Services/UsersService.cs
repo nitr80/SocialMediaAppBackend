@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SocialMediaAppBackend.DTOs.User;
+using SocialMediaAppBackend.Data;
 using SocialMediaAppBackend.Mappings;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
@@ -85,6 +86,25 @@ public class UsersService : IUsersService
         using (FileStream stream = new FileStream(filePath, FileMode.Create))
         {
             await image.CopyToAsync(stream);
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl) &&
+            user.ProfileImageUrl.StartsWith("/images/profiles/"))
+        {
+            string oldFileName = Path.GetFileName(user.ProfileImageUrl);
+            string oldFilePath = Path.Combine(folder, oldFileName);
+
+            try
+            {
+                if (File.Exists(oldFilePath))
+                {
+                    File.Delete(oldFilePath);
+                }
+            }
+            catch
+            {
+                // Deletion failures should not block the profile picture update
+            }
         }
 
         user.ProfileImageUrl = $"/images/profiles/{fileName}";

@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using SocialMediaAppBackend.Models;
 
+namespace SocialMediaAppBackend.Data;
+
+
 public class AppDbContext : DbContext
 {
     public DbSet<User> Users { get; set; }
@@ -20,9 +23,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
         modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
 
-        modelBuilder.Entity<Like>().HasIndex(l => new {l.PostId, l.UserId}).IsUnique();
+        modelBuilder.Entity<Like>().HasIndex(l => new { l.PostId, l.UserId }).IsUnique();
 
-        modelBuilder.Entity<CommentLike>().HasIndex(l => new {l.CommentId, l.UserId}).IsUnique();
+        modelBuilder.Entity<CommentLike>().HasIndex(l => new { l.CommentId, l.UserId }).IsUnique();
 
         modelBuilder.Entity<RefreshToken>().HasIndex(x => x.Token).IsUnique();
     }

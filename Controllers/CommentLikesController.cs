@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
+using SocialMediaAppBackend.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAppBackend.Results;
 using SocialMediaAppBackend.Services.Interfaces;
 
 [ApiController]
-[Route("[controller]")]
+[Route("Comments/{commentId}/Likes")]
+[Authorize]
 public class CommentLikesController : ControllerBase
 {
     private readonly ICommentLikesService _commentLikesService;
@@ -14,8 +16,7 @@ public class CommentLikesController : ControllerBase
         _commentLikesService = commentLikesService;
     }
 
-    [Authorize]
-    [HttpGet("liked/{commentId}")]
+    [HttpGet]
     public async Task<ActionResult<bool>> Get(int commentId)
     {
         Result<bool> result = await _commentLikesService.GetLike(commentId, User.GetUserId());
@@ -23,8 +24,7 @@ public class CommentLikesController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    [Authorize]
-    [HttpGet("{postId}/liked")]
+    [HttpGet("/Comments/me/{postId}/Likes")]
     public async Task<ActionResult<List<int>>> GetAllByPostId(int postId)
     {
         Result<List<int>> result = await _commentLikesService.GetAllLikedCommentIdsByUserIdAndPostId(User.GetUserId(), postId);
@@ -32,21 +32,24 @@ public class CommentLikesController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    [Authorize]
-    [HttpPost("like/{commentId}")]
-    public async Task<ActionResult> Like(int commentId)
+    [HttpPost]
+    public async Task<ActionResult> LikeResource(int commentId)
     {
         Result<bool> result = await _commentLikesService.LikeComment(commentId, User.GetUserId());
 
         return result.ToActionResult(this);
     }
 
-    [Authorize]
-    [HttpPost("unlike/{commentId}")]
-    public async Task<ActionResult> Unlike(int commentId)
+    [HttpDelete]
+    public async Task<ActionResult> UnlikeResource(int commentId)
     {
         Result<bool> result = await _commentLikesService.UnlikeComment(commentId, User.GetUserId());
 
-        return result.ToActionResult(this);
+        if (!result.Success)
+        {
+            return result.ToActionResult(this);
+        }
+
+        return NoContent();
     }
 }

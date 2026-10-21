@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SocialMediaAppBackend.Data;
 using SocialMediaAppBackend.DTOs.Comment;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
@@ -28,15 +29,29 @@ public class CommentsService : ICommentsService
         return Result<Comment>.Ok(comment);
     }
 
-    public async Task<Result<List<Comment>>> GetCommentsByPostId(int postId)
+    public async Task<Result<List<CommentResponseDto>>> GetCommentsByPostId(int postId)
     {
-        List<Comment> commentList = await _appDbContext.Comments
+        List<CommentResponseDto> commentList = await _appDbContext.Comments
             .Where(c => c.ParentPostId == postId)
-            .Include(c => c.Author)
-            .Include(c => c.CommentLikes)
             .OrderByDescending(c => c.CreatedAt)
+            .Select(c => new CommentResponseDto
+            {
+                Id = c.Id,
+                Content = c.Content,
+                CreatedAt = c.CreatedAt,
+                PostId = c.ParentPostId,
+                LikeCount = c.CommentLikes.Count(),
+                Author = new DTOs.User.UserResponseDto
+                {
+                    Id = c.Author.Id,
+                    Username = c.Author.Username,
+                    Email = c.Author.Email,
+                    Bio = c.Author.Bio,
+                    ProfileImageUrl = c.Author.ProfileImageUrl
+                }
+            })
             .ToListAsync();
-            
-        return Result<List<Comment>>.Ok(commentList);
+
+        return Result<List<CommentResponseDto>>.Ok(commentList);
     }
 }

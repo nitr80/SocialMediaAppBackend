@@ -17,7 +17,7 @@ public static class PostMappings
             CommentCount = post.Comments.Count
         };
     }
-    
+
     public static Post ToPost(PostRequestDto postRequestDto, int authorId)
     {
         return new Post

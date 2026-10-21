@@ -5,12 +5,12 @@ namespace SocialMediaAppBackend.Mappings;
 
 public static class CommentMappings
 {
-    public static Comment ToComment(CommentRequestDto commentRequestDto, int authorId)
+    public static Comment ToComment(CommentRequestDto commentRequestDto, int postId, int authorId)
     {
         return new Comment
         {
             Content = commentRequestDto.Content,
-            ParentPostId = commentRequestDto.PostId,
+            ParentPostId = postId,
             AuthorId = authorId
         };
     }

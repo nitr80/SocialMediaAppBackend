@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
+using SocialMediaAppBackend.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAppBackend.Results;
 using SocialMediaAppBackend.Services.Interfaces;
 
 [ApiController]
-[Route("[controller]")]
+[Route("Posts/{postId}/Likes")]
+[Authorize]
 public class LikesController : ControllerBase
 {
     private readonly ILikesService _likesService;
@@ -14,8 +16,7 @@ public class LikesController : ControllerBase
         _likesService = likesService;
     }
 
-    [Authorize]
-    [HttpGet("liked/{postId}")]
+    [HttpGet]
     public async Task<ActionResult<bool>> Get(int postId)
     {
         Result<bool> result = await _likesService.GetLike(postId, User.GetUserId());
@@ -23,8 +24,7 @@ public class LikesController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    [Authorize]
-    [HttpGet("liked")]
+    [HttpGet("/Posts/me/Likes")]
     public async Task<ActionResult<List<int>>> GetAll()
     {
         Result<List<int>> result = await _likesService.GetAllLikedPostIdsByUserId(User.GetUserId());
@@ -32,21 +32,24 @@ public class LikesController : ControllerBase
         return result.ToActionResult(this);
     }
 
-    [Authorize]
-    [HttpPost("like/{postId}")]
-    public async Task<ActionResult> LikePost(int postId)
+    [HttpPost]
+    public async Task<ActionResult> LikePostResource(int postId)
     {
         Result<bool> result = await _likesService.LikePost(postId, User.GetUserId());
 
         return result.ToActionResult(this);
     }
 
-    [Authorize]
-    [HttpPost("unlike/{postId}")]
-    public async Task<ActionResult> UnlikePost(int postId)
+    [HttpDelete]
+    public async Task<ActionResult> UnlikePostResource(int postId)
     {
         Result<bool> result = await _likesService.UnlikePost(postId, User.GetUserId());
 
-        return result.ToActionResult(this);
+        if (!result.Success)
+        {
+            return result.ToActionResult(this);
+        }
+
+        return NoContent();
     }
 }

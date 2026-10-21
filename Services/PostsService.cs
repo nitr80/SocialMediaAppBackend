@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using SocialMediaAppBackend.DTOs.Post;
+using SocialMediaAppBackend.Data;
 using SocialMediaAppBackend.Mappings;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
@@ -22,7 +23,13 @@ public class PostsService : IPostsService
         await _appDbContext.Posts.AddAsync(post);
         await _appDbContext.SaveChangesAsync();
 
-        return Result<Post>.Ok(post);
+        Post createdPost = await _appDbContext.Posts
+            .Include(p => p.Author)
+            .Include(p => p.Likes)
+            .Include(p => p.Comments)
+            .FirstAsync(p => p.Id == post.Id);
+
+        return Result<Post>.Ok(createdPost);
     }
 
     public async Task<Result<bool>> DeletePostById(int postId, int userId)
@@ -46,24 +53,37 @@ public class PostsService : IPostsService
         return Result<bool>.Ok(true);
     }
 
-    public async Task<Result<List<Post>>> GetAllPosts()
+    public async Task<Result<List<PostResponseDto>>> GetAllPosts()
     {
-        List<Post> postList = await _appDbContext.Posts
-            .Include(p => p.Author)
-            .Include(p =>  p.Likes)
-            .Include(p =>  p.Comments)
+        List<PostResponseDto> postList = await _appDbContext.Posts
             .OrderByDescending(p => p.CreatedAt)
+            .Select(p => new PostResponseDto
+            {
+                Id = p.Id,
+                Content = p.Content,
+                CreatedAt = p.CreatedAt,
+                LikeCount = p.Likes.Count(),
+                CommentCount = p.Comments.Count(),
+                Author = new DTOs.User.UserResponseDto
+                {
+                    Id = p.Author.Id,
+                    Username = p.Author.Username,
+                    Email = p.Author.Email,
+                    Bio = p.Author.Bio,
+                    ProfileImageUrl = p.Author.ProfileImageUrl
+                }
+            })
             .ToListAsync();
-            
-        return Result<List<Post>>.Ok(postList);
+
+        return Result<List<PostResponseDto>>.Ok(postList);
     }
 
     public async Task<Result<Post>> GetPostById(int postId)
     {
         Post? post = await _appDbContext.Posts
             .Include(p => p.Author)
-            .Include(p =>  p.Likes)
-            .Include(p =>  p.Comments)
+            .Include(p => p.Likes)
+            .Include(p => p.Comments)
             .FirstOrDefaultAsync(p => p.Id == postId);
 
         if (post == null)
@@ -73,5 +93,5 @@ public class PostsService : IPostsService
 
         return Result<Post>.Ok(post);
     }
-    
+
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using SocialMediaAppBackend.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using SocialMediaAppBackend.DTOs.User;
 using SocialMediaAppBackend.Mappings;
@@ -34,7 +35,7 @@ public class UsersController : ControllerBase
     }
 
     [Authorize]
-    [HttpPatch("update-bio")]
+    [HttpPatch("me/Bio")]
     public async Task<ActionResult> AddOrUpdateBio(UserBioRequestDto userBioRequestDto)
     {
         Result<bool> result = await _usersService.AddOrUpdateBio(UserMappings.ToBioString(userBioRequestDto), User.GetUserId());
@@ -43,7 +44,7 @@ public class UsersController : ControllerBase
     }
 
     [Authorize]
-    [HttpPatch("update-profile-picture")]
+    [HttpPatch("me/ProfilePicture")]
     public async Task<ActionResult> AddOrUpdateProfilePicture(IFormFile image)
     {
         Result<bool> result = await _usersService.AddOrUpdateProfilePicture(image, User.GetUserId());

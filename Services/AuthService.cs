@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using SocialMediaAppBackend.Data;
 using SocialMediaAppBackend.DTOs.Auth;
 using SocialMediaAppBackend.Mappings;
 using SocialMediaAppBackend.Models;
