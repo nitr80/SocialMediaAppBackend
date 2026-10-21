@@ -18,6 +18,11 @@ public class CommentsService : ICommentsService
 
     public async Task<Result<Comment>> CreateComment(Comment comment)
     {
+        if (!await _appDbContext.Posts.AnyAsync(p => p.Id == comment.ParentPostId))
+        {
+            return Result<Comment>.Fail("Post doesn't exist", ErrorKind.NotFound);
+        }
+
         await _appDbContext.Comments.AddAsync(comment);
         await _appDbContext.SaveChangesAsync();
 
@@ -31,6 +36,11 @@ public class CommentsService : ICommentsService
 
     public async Task<Result<List<CommentResponseDto>>> GetCommentsByPostId(int postId)
     {
+        if (!await _appDbContext.Posts.AnyAsync(p => p.Id == postId))
+        {
+            return Result<List<CommentResponseDto>>.Fail("Post doesn't exist", ErrorKind.NotFound);
+        }
+
         List<CommentResponseDto> commentList = await _appDbContext.Comments
             .Where(c => c.ParentPostId == postId)
             .OrderByDescending(c => c.CreatedAt)

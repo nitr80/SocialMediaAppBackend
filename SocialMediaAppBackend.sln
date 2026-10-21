@@ -4,6 +4,10 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialMediaAppBackend", "SocialMediaAppBackend.csproj", "{2B9D6D85-9CFC-BF23-6441-3B02DBBC4C69}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialMediaAppBackend.Tests", "Tests\SocialMediaAppBackend.Tests.csproj", "{BCFEB636-8473-4331-B795-EF26C3FA3550}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,9 +18,16 @@ Global
 		{2B9D6D85-9CFC-BF23-6441-3B02DBBC4C69}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B9D6D85-9CFC-BF23-6441-3B02DBBC4C69}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B9D6D85-9CFC-BF23-6441-3B02DBBC4C69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCFEB636-8473-4331-B795-EF26C3FA3550}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCFEB636-8473-4331-B795-EF26C3FA3550}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCFEB636-8473-4331-B795-EF26C3FA3550}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCFEB636-8473-4331-B795-EF26C3FA3550}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BCFEB636-8473-4331-B795-EF26C3FA3550} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2818F86E-6127-40E2-869E-5F5BA695A4A0}

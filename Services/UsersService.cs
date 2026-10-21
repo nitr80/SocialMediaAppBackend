@@ -81,6 +81,8 @@ public class UsersService : IUsersService
             "images",
             "profiles");
 
+        Directory.CreateDirectory(folder);
+
         string filePath = Path.Combine(folder, fileName);
 
         using (FileStream stream = new FileStream(filePath, FileMode.Create))
