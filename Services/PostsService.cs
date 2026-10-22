@@ -53,9 +53,13 @@ public class PostsService : IPostsService
         return Result<bool>.Ok(true);
     }
 
-    public async Task<Result<List<PostResponseDto>>> GetAllPosts()
+    public async Task<Result<List<PostResponseDto>>> GetAllPosts(int currentUserId)
     {
         List<PostResponseDto> postList = await _appDbContext.Posts
+            .Where(p => p.AuthorId == currentUserId || 
+                _appDbContext.Follows.Any(
+                    f => f.UserId == currentUserId && 
+                    f.FollowedUserId == p.AuthorId))
             .OrderByDescending(p => p.CreatedAt)
             .Select(p => new PostResponseDto
             {
@@ -78,7 +82,7 @@ public class PostsService : IPostsService
         return Result<List<PostResponseDto>>.Ok(postList);
     }
 
-    public async Task<Result<Post>> GetPostById(int postId)
+    public async Task<Result<Post>> GetPostById(int postId, int currentUserId)
     {
         Post? post = await _appDbContext.Posts
             .Include(p => p.Author)
@@ -89,6 +93,14 @@ public class PostsService : IPostsService
         if (post == null)
         {
             return Result<Post>.Fail("Post not found", ErrorKind.NotFound);
+        }
+
+        bool isFollowing = await _appDbContext.Follows
+            .AnyAsync(f => f.UserId == currentUserId && f.FollowedUserId == post.AuthorId);
+        
+        if (!isFollowing && post.AuthorId != currentUserId)
+        {
+            return Result<Post>.Fail("Not authorized to view this post", ErrorKind.Forbidden);
         }
 
         return Result<Post>.Ok(post);

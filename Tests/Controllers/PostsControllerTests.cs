@@ -77,10 +77,13 @@ public class PostsControllerTests
         };
 
         _postsService
-            .Setup(s => s.GetAllPosts())
+            .Setup(s => s.GetAllPosts(42))
             .ReturnsAsync(Result<List<PostResponseDto>>.Ok(posts));
 
-        var controller = new PostsController(_postsService.Object);
+        var controller = new PostsController(_postsService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(42)
+        };
 
         var result = await controller.GetAll();
 
@@ -94,10 +97,13 @@ public class PostsControllerTests
     public async Task GetById_WhenPostExists_ReturnsOkWithMappedDto()
     {
         _postsService
-            .Setup(s => s.GetPostById(1))
+            .Setup(s => s.GetPostById(1, 42))
             .ReturnsAsync(Result<Post>.Ok(SamplePost()));
 
-        var controller = new PostsController(_postsService.Object);
+        var controller = new PostsController(_postsService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(42)
+        };
 
         var result = await controller.GetById(1);
 
@@ -112,15 +118,36 @@ public class PostsControllerTests
     public async Task GetById_WhenPostMissing_ReturnsNotFoundWithMessage()
     {
         _postsService
-            .Setup(s => s.GetPostById(999))
+            .Setup(s => s.GetPostById(999, 42))
             .ReturnsAsync(Result<Post>.Fail("Post not found", ErrorKind.NotFound));
 
-        var controller = new PostsController(_postsService.Object);
+        var controller = new PostsController(_postsService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(42)
+        };
 
         var result = await controller.GetById(999);
 
         var objectResult = Assert.IsAssignableFrom<ObjectResult>(result.Result);
         AssertMessageResult(objectResult, StatusCodes.Status404NotFound, "Post not found");
+    }
+
+    [Fact]
+    public async Task GetById_WhenNotFollowing_ReturnsForbiddenWithMessage()
+    {
+        _postsService
+            .Setup(s => s.GetPostById(1, 42))
+            .ReturnsAsync(Result<Post>.Fail("Not authorized to view this post", ErrorKind.Forbidden));
+
+        var controller = new PostsController(_postsService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(42)
+        };
+
+        var result = await controller.GetById(1);
+
+        var objectResult = Assert.IsAssignableFrom<ObjectResult>(result.Result);
+        AssertMessageResult(objectResult, StatusCodes.Status403Forbidden, "Not authorized to view this post");
     }
 
     // ---------- Create ----------

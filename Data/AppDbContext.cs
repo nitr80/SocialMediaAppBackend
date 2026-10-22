@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<Like> Likes { get; set; }
     public DbSet<CommentLike> CommentLikes { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<Follow> Follows { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -28,5 +29,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<CommentLike>().HasIndex(l => new { l.CommentId, l.UserId }).IsUnique();
 
         modelBuilder.Entity<RefreshToken>().HasIndex(x => x.Token).IsUnique();
+
+        modelBuilder.Entity<Follow>().HasIndex(f => new { f.UserId, f.FollowedUserId }).IsUnique();
     }
 }

@@ -73,6 +73,7 @@ builder.Services.AddScoped<IUsersService, UsersService>();
 builder.Services.AddScoped<ILikesService, LikesService>();
 builder.Services.AddScoped<ICommentsService, CommentsService>();
 builder.Services.AddScoped<ICommentLikesService, CommentLikesService>();
+builder.Services.AddScoped<IFollowsService, FollowsService>();
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>

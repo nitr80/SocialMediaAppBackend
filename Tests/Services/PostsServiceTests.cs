@@ -67,7 +67,7 @@ public class PostsServiceTests
     // ---------- GetPostById ----------
 
     [Fact]
-    public async Task GetPostById_WhenPostExists_ReturnsPostWithAuthor()
+    public async Task GetPostById_WhenOwner_ReturnsPostWithAuthor()
     {
         using var db = CreateDbContext();
         var author = CreateUser("alice");
@@ -80,7 +80,33 @@ public class PostsServiceTests
 
         var service = new PostsService(db);
 
-        var result = await service.GetPostById(post.Id);
+        var result = await service.GetPostById(post.Id, author.Id);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Equal(post.Id, result.Data!.Id);
+        Assert.NotNull(result.Data.Author);
+    }
+
+    [Fact]
+    public async Task GetPostById_WhenFollowing_ReturnsPostWithAuthor()
+    {
+        using var db = CreateDbContext();
+        var author = CreateUser("alice");
+        var follower = CreateUser("bob");
+        db.Users.AddRange(author, follower);
+        await db.SaveChangesAsync();
+
+        var post = new Post { Content = "Hello", AuthorId = author.Id };
+        db.Posts.Add(post);
+        await db.SaveChangesAsync();
+
+        db.Follows.Add(new Follow { UserId = follower.Id, FollowedUserId = author.Id });
+        await db.SaveChangesAsync();
+
+        var service = new PostsService(db);
+
+        var result = await service.GetPostById(post.Id, follower.Id);
 
         Assert.True(result.Success);
         Assert.NotNull(result.Data);
@@ -92,18 +118,39 @@ public class PostsServiceTests
     public async Task GetPostById_WhenPostMissing_ReturnsNotFound()
     {
         using var db = CreateDbContext();
+        
         var service = new PostsService(db);
-
-        var result = await service.GetPostById(999);
+        var result = await service.GetPostById(999, 1);
 
         Assert.False(result.Success);
         Assert.Equal(ErrorKind.NotFound, result.Kind);
     }
 
+    [Fact]
+    public async Task GetPostById_WhenNotFollowing_ReturnsNotFound()
+    {
+        using var db = CreateDbContext();
+        var author = CreateUser("alice");
+        var other = CreateUser("bob");
+        db.Users.AddRange(author, other);
+        await db.SaveChangesAsync();
+
+        var post = new Post { Content = "Hello", AuthorId = author.Id };
+        db.Posts.Add(post);
+        await db.SaveChangesAsync();
+
+        var service = new PostsService(db);
+
+        var result = await service.GetPostById(post.Id, other.Id);
+
+        Assert.False(result.Success);
+        Assert.Equal(ErrorKind.Forbidden, result.Kind);
+    }
+
     // ---------- GetAllPosts ----------
 
     [Fact]
-    public async Task GetAllPosts_ReturnsPostsWithCountsAndAuthorOrderedNewestFirst()
+    public async Task GetAllPosts_WhenOwner_ReturnsPostsWithCountsAndAuthorOrderedNewestFirst()
     {
         using var db = CreateDbContext();
         var author = CreateUser("alice");
@@ -131,7 +178,7 @@ public class PostsServiceTests
 
         var service = new PostsService(db);
 
-        var result = await service.GetAllPosts();
+        var result = await service.GetAllPosts(author.Id);
 
         Assert.True(result.Success);
         Assert.NotNull(result.Data);
@@ -146,6 +193,28 @@ public class PostsServiceTests
         Assert.Equal("alice", result.Data[0].Author.Username);
         Assert.Equal(0, result.Data[1].LikeCount);
         Assert.Equal(0, result.Data[1].CommentCount);
+    }
+
+    [Fact]
+    public async Task GetAllPosts_WhenNotFollowing_ReturnsEmptyList()
+    {
+        using var db = CreateDbContext();
+        var author = CreateUser("alice");
+        var other = CreateUser("bob");
+        db.Users.AddRange(author, other);
+        await db.SaveChangesAsync();
+
+        var post = new Post { Content = "Hello", AuthorId = author.Id };
+        db.Posts.Add(post);
+        await db.SaveChangesAsync();
+
+        var service = new PostsService(db);
+
+        var result = await service.GetAllPosts(other.Id);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Empty(result.Data!);
     }
 
     // ---------- DeletePostById ----------

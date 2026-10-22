@@ -25,7 +25,7 @@ public class PostsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<PostResponseDto>>> GetAll()
     {
-        Result<List<PostResponseDto>> result = await _postsService.GetAllPosts();
+        Result<List<PostResponseDto>> result = await _postsService.GetAllPosts(User.GetUserId());
 
         if (!result.Success)
         {
@@ -39,7 +39,7 @@ public class PostsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<PostResponseDto>> GetById(int id)
     {
-        Result<Post> result = await _postsService.GetPostById(id);
+        Result<Post> result = await _postsService.GetPostById(id, User.GetUserId());
 
         if (!result.Success)
         {
