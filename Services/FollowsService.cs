@@ -16,15 +16,15 @@ public class FollowsService : IFollowsService
         _appDbContext = appDbContext;
     }
 
-    public async Task<Result<bool>> FollowUser(int userId, int followerId)
+    public async Task<Result<bool>> FollowUser(int followedUserId, int followerId)
     {
-        var userExists = await _appDbContext.Users.AnyAsync(u => u.Id == userId);
-        if (!userExists) 
+        var userExists = await _appDbContext.Users.AnyAsync(u => u.Id == followedUserId);
+        if (!userExists)
         {
             return Result<bool>.Fail("User doesn't exist", ErrorKind.NotFound);
         }
 
-        var alreadyFollowing = await _appDbContext.Follows.AnyAsync(f => f.UserId == userId && f.FollowedUserId == followerId);
+        var alreadyFollowing = await _appDbContext.Follows.AnyAsync(f => f.FollowerId == followerId && f.FollowedUserId == followedUserId);
         if (alreadyFollowing)
         {
             return Result<bool>.Fail("Already following this user", ErrorKind.Conflict);
@@ -32,8 +32,8 @@ public class FollowsService : IFollowsService
 
         var follow = new Follow
         {
-            UserId = userId,
-            FollowedUserId = followerId
+            FollowerId = followerId,
+            FollowedUserId = followedUserId
         };
 
         await _appDbContext.Follows.AddAsync(follow);
@@ -41,27 +41,27 @@ public class FollowsService : IFollowsService
         return Result<bool>.Ok(true);
     }
 
-    public async Task<Result<bool>> GetFollowingStatus(int userId, int followerId)
+    public async Task<Result<bool>> GetFollowingStatus(int followedUserId, int followerId)
     {
-        var userExists = await _appDbContext.Users.AnyAsync(u => u.Id == userId);
-        if (!userExists) 
-        {
-            return Result<bool>.Fail("User doesn't exist", ErrorKind.NotFound);
-        } 
-
-        var isFollowing = await _appDbContext.Follows.AnyAsync(f => f.UserId == userId && f.FollowedUserId == followerId);
-        return Result<bool>.Ok(isFollowing);
-    }
-
-    public async Task<Result<bool>> UnfollowUser(int userId, int followerId)
-    {
-        var userExists = await _appDbContext.Users.AnyAsync(u => u.Id == userId);
-        if (!userExists) 
+        var userExists = await _appDbContext.Users.AnyAsync(u => u.Id == followedUserId);
+        if (!userExists)
         {
             return Result<bool>.Fail("User doesn't exist", ErrorKind.NotFound);
         }
 
-        var follow = await _appDbContext.Follows.FirstOrDefaultAsync(f => f.UserId == userId && f.FollowedUserId == followerId);
+        var isFollowing = await _appDbContext.Follows.AnyAsync(f => f.FollowerId == followerId && f.FollowedUserId == followedUserId);
+        return Result<bool>.Ok(isFollowing);
+    }
+
+    public async Task<Result<bool>> UnfollowUser(int followedUserId, int followerId)
+    {
+        var userExists = await _appDbContext.Users.AnyAsync(u => u.Id == followedUserId);
+        if (!userExists)
+        {
+            return Result<bool>.Fail("User doesn't exist", ErrorKind.NotFound);
+        }
+
+        var follow = await _appDbContext.Follows.FirstOrDefaultAsync(f => f.FollowerId == followerId && f.FollowedUserId == followedUserId);
         if (follow == null)
         {
             return Result<bool>.Ok(true);

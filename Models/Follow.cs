@@ -6,9 +6,9 @@ public class Follow
 {
     public int Id { get; set; }
 
-    public int UserId { get; set; }
-    [ForeignKey(nameof(UserId))]
-    public User User { get; set; } = null!;
+    public int FollowerId { get; set; }
+    [ForeignKey(nameof(FollowerId))]
+    public User Follower { get; set; } = null!;
 
     public int FollowedUserId { get; set; }
     [ForeignKey(nameof(FollowedUserId))]

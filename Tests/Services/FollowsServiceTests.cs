@@ -32,7 +32,7 @@ public class FollowsServiceTests
             Email = $"{username}@example.com",
             PasswordHash = "hash"
         };
-    }  
+    }
 
     [Fact]
     public async Task FollowUser_AddsFollow()
@@ -44,10 +44,10 @@ public class FollowsServiceTests
         await db.SaveChangesAsync();
 
         var service = new FollowsService(db);
-        var result = await service.FollowUser(user1.Id, user2.Id);
+        var result = await service.FollowUser(user2.Id, user1.Id);
 
         Assert.True(result.Success);
-        Assert.True(await db.Follows.AnyAsync(f => f.UserId == user1.Id && f.FollowedUserId == user2.Id));
+        Assert.True(await db.Follows.AnyAsync(f => f.FollowerId == user1.Id && f.FollowedUserId == user2.Id));
     }
 
     [Fact]
@@ -70,11 +70,11 @@ public class FollowsServiceTests
         db.Users.AddRange(user1, user2);
         await db.SaveChangesAsync();
 
-        await db.Follows.AddAsync(new Follow { UserId = user1.Id, FollowedUserId = user2.Id });
+        await db.Follows.AddAsync(new Follow { FollowerId = user1.Id, FollowedUserId = user2.Id });
         await db.SaveChangesAsync();
 
         var service = new FollowsService(db);
-        var result = await service.FollowUser(user1.Id, user2.Id);
+        var result = await service.FollowUser(user2.Id, user1.Id);
 
         Assert.False(result.Success);
         Assert.Equal(ErrorKind.Conflict, result.Kind);
@@ -93,14 +93,14 @@ public class FollowsServiceTests
         db.Users.AddRange(user1, user2);
         await db.SaveChangesAsync();
 
-        await db.Follows.AddAsync(new Follow { UserId = user1.Id, FollowedUserId = user2.Id });
+        await db.Follows.AddAsync(new Follow { FollowerId = user1.Id, FollowedUserId = user2.Id });
         await db.SaveChangesAsync();
-        
+
         var service = new FollowsService(db);
-        var result = await service.UnfollowUser(user1.Id, user2.Id);
+        var result = await service.UnfollowUser(user2.Id, user1.Id);
 
         Assert.True(result.Success);
-        Assert.False(await db.Follows.AnyAsync(f => f.UserId == user1.Id && f.FollowedUserId == user2.Id));
+        Assert.False(await db.Follows.AnyAsync(f => f.FollowerId == user1.Id && f.FollowedUserId == user2.Id));
     }
 
     [Fact]
@@ -140,11 +140,11 @@ public class FollowsServiceTests
         db.Users.AddRange(user1, user2);
         await db.SaveChangesAsync();
 
-        await db.Follows.AddAsync(new Follow { UserId = user1.Id, FollowedUserId = user2.Id });
+        await db.Follows.AddAsync(new Follow { FollowerId = user1.Id, FollowedUserId = user2.Id });
         await db.SaveChangesAsync();
 
         var service = new FollowsService(db);
-        var result = await service.GetFollowingStatus(user1.Id, user2.Id);
+        var result = await service.GetFollowingStatus(user2.Id, user1.Id);
 
         Assert.True(result.Success);
         Assert.True(result.Data);

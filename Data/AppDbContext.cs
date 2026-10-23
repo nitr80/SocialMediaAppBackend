@@ -30,6 +30,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<RefreshToken>().HasIndex(x => x.Token).IsUnique();
 
-        modelBuilder.Entity<Follow>().HasIndex(f => new { f.UserId, f.FollowedUserId }).IsUnique();
+        modelBuilder.Entity<Follow>().HasIndex(f => new { f.FollowerId, f.FollowedUserId }).IsUnique();
     }
 }

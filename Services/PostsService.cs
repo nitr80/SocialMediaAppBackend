@@ -56,9 +56,9 @@ public class PostsService : IPostsService
     public async Task<Result<List<PostResponseDto>>> GetAllPosts(int currentUserId)
     {
         List<PostResponseDto> postList = await _appDbContext.Posts
-            .Where(p => p.AuthorId == currentUserId || 
+            .Where(p => p.AuthorId == currentUserId ||
                 _appDbContext.Follows.Any(
-                    f => f.UserId == currentUserId && 
+                    f => f.FollowerId == currentUserId &&
                     f.FollowedUserId == p.AuthorId))
             .OrderByDescending(p => p.CreatedAt)
             .Select(p => new PostResponseDto
@@ -96,8 +96,8 @@ public class PostsService : IPostsService
         }
 
         bool isFollowing = await _appDbContext.Follows
-            .AnyAsync(f => f.UserId == currentUserId && f.FollowedUserId == post.AuthorId);
-        
+            .AnyAsync(f => f.FollowerId == currentUserId && f.FollowedUserId == post.AuthorId);
+
         if (!isFollowing && post.AuthorId != currentUserId)
         {
             return Result<Post>.Fail("Not authorized to view this post", ErrorKind.Forbidden);

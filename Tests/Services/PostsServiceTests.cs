@@ -101,7 +101,7 @@ public class PostsServiceTests
         db.Posts.Add(post);
         await db.SaveChangesAsync();
 
-        db.Follows.Add(new Follow { UserId = follower.Id, FollowedUserId = author.Id });
+        db.Follows.Add(new Follow { FollowerId = follower.Id, FollowedUserId = author.Id });
         await db.SaveChangesAsync();
 
         var service = new PostsService(db);
@@ -118,7 +118,7 @@ public class PostsServiceTests
     public async Task GetPostById_WhenPostMissing_ReturnsNotFound()
     {
         using var db = CreateDbContext();
-        
+
         var service = new PostsService(db);
         var result = await service.GetPostById(999, 1);
 
@@ -179,6 +179,57 @@ public class PostsServiceTests
         var service = new PostsService(db);
 
         var result = await service.GetAllPosts(author.Id);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Equal(2, result.Data!.Count);
+
+        // newest first
+        Assert.Equal("newer", result.Data[0].Content);
+        Assert.Equal("older", result.Data[1].Content);
+
+        Assert.Equal(1, result.Data[0].LikeCount);
+        Assert.Equal(1, result.Data[0].CommentCount);
+        Assert.Equal("alice", result.Data[0].Author.Username);
+        Assert.Equal(0, result.Data[1].LikeCount);
+        Assert.Equal(0, result.Data[1].CommentCount);
+    }
+
+    [Fact]
+    public async Task GetAllPosts_WhenFollowing_ReturnsPostsWithCountsAndAuthorOrderedNewestFirst()
+    {
+        using var db = CreateDbContext();
+        var author = CreateUser("alice");
+        var follower = CreateUser("bob");
+        db.Users.Add(author);
+        db.Users.Add(follower);
+        await db.SaveChangesAsync();
+
+        var older = new Post
+        {
+            Content = "older",
+            AuthorId = author.Id,
+            CreatedAt = DateTime.UtcNow.AddMinutes(-10)
+        };
+        var newer = new Post
+        {
+            Content = "newer",
+            AuthorId = author.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        db.Posts.AddRange(older, newer);
+        await db.SaveChangesAsync();
+
+        db.Likes.Add(new Like { PostId = newer.Id, UserId = author.Id });
+        db.Comments.Add(new Comment { ParentPostId = newer.Id, AuthorId = author.Id, Content = "nice" });
+        await db.SaveChangesAsync();
+
+        db.Follows.Add(new Follow { FollowerId = follower.Id, FollowedUserId = author.Id });
+        await db.SaveChangesAsync();
+
+        var service = new PostsService(db);
+
+        var result = await service.GetAllPosts(follower.Id);
 
         Assert.True(result.Success);
         Assert.NotNull(result.Data);

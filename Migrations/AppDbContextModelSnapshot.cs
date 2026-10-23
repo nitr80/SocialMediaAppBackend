@@ -82,14 +82,14 @@ namespace SocialMediaAppBackend.Migrations
                     b.Property<int>("FollowedUserId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("UserId")
+                    b.Property<int>("FollowerId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
                     b.HasIndex("FollowedUserId");
 
-                    b.HasIndex("UserId", "FollowedUserId")
+                    b.HasIndex("FollowerId", "FollowedUserId")
                         .IsUnique();
 
                     b.ToTable("Follows");
@@ -259,15 +259,15 @@ namespace SocialMediaAppBackend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SocialMediaAppBackend.Models.User", "User")
+                    b.HasOne("SocialMediaAppBackend.Models.User", "Follower")
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("FollowerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("FollowedUser");
 
-                    b.Navigation("User");
+                    b.Navigation("Follower");
                 });
 
             modelBuilder.Entity("SocialMediaAppBackend.Models.Like", b =>
