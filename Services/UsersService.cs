@@ -114,4 +114,27 @@ public class UsersService : IUsersService
 
         return Result<bool>.Ok(true);
     }
+
+    public async Task<Result<List<UserResponseDto>>> SearchUsername(string? search, int currentUserId)
+    {
+        IQueryable<User> query = _appDbContext.Users;
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(u => u.Username.ToLower().Contains(search.ToLower()) && u.Id != currentUserId)
+                         .OrderBy(u => u.Username)
+                         .Take(10);
+        }
+        else
+        {
+            // TODO: Randomize
+            query = query.Where(u => u.Id != currentUserId).Take(10);
+        }
+
+        List<UserResponseDto> users = await query
+            .Select(u => UserMappings.ToResponseDto(u))
+            .ToListAsync();
+
+        return Result<List<UserResponseDto>>.Ok(users);
+    }
 }

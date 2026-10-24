@@ -51,4 +51,13 @@ public class UsersController : ControllerBase
 
         return result.ToActionResult(this);
     }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<ActionResult<List<UserResponseDto>>> SearchUsername([FromQuery] string? search)
+    {
+        Result<List<UserResponseDto>> result = await _usersService.SearchUsername(search, User.GetUserId());
+
+        return result.ToActionResult(this);
+    }
 }

@@ -169,4 +169,40 @@ public class UsersControllerTests
         var objectResult = Assert.IsAssignableFrom<ObjectResult>(result);
         AssertMessageResult(objectResult, StatusCodes.Status400BadRequest, "Only jpg, jpeg, png and webp images are allowed");
     }
+
+    // --------- SearchUsername ----------
+
+    [Fact]
+    public async Task SearchUsername_WhenSearchTermProvided_ReturnsMatchingUsers()
+    {
+        _usersService
+            .Setup(s => s.SearchUsername("john", 42))
+            .ReturnsAsync(Result<List<UserResponseDto>>.Ok(new List<UserResponseDto>()));
+
+        var controller = new UsersController(_usersService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(42)
+        };
+
+        var result = await controller.SearchUsername("john");
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task SearchUsername_WhenNoSearchTermProvided_ReturnsAllUsers()
+    {
+        _usersService
+            .Setup(s => s.SearchUsername(null, 42))
+            .ReturnsAsync(Result<List<UserResponseDto>>.Ok(new List<UserResponseDto>()));
+
+        var controller = new UsersController(_usersService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(42)
+        };
+
+        var result = await controller.SearchUsername(null);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+    }
 }

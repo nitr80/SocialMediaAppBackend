@@ -210,4 +210,61 @@ public class UsersServiceTests
         Assert.False(result.Success);
         Assert.Equal(ErrorKind.NotFound, result.Kind);
     }
+
+
+    // --------- SearchUsername ----------
+
+    [Fact]
+    public async Task SearchUsername_WhenSearchTermProvided_ReturnsMatchingUsers()
+    {
+        using var db = CreateDbContext();
+        var user = CreateUser("alice");
+        db.Users.Add(user);
+        var currentUser = CreateUser("bob");
+        db.Users.Add(currentUser);
+        await db.SaveChangesAsync();
+
+        var service = new UsersService(db);
+
+        var result = await service.SearchUsername("ali", currentUser.Id);
+
+        Assert.True(result.Success);
+        Assert.Single(result.Data!);
+    }
+
+    [Fact]
+    public async Task SearchUsername_WhenNoSearchTermProvided_ReturnsAllUsers()
+    {
+        using var db = CreateDbContext();
+        var user = CreateUser("alice");
+        db.Users.Add(user);
+        var currentUser = CreateUser("bob");
+        db.Users.Add(currentUser);
+        await db.SaveChangesAsync();
+
+        var service = new UsersService(db);
+
+        var result = await service.SearchUsername(null, currentUser.Id);
+
+        Assert.True(result.Success);
+        Assert.Single(result.Data!);
+    }
+
+    [Fact]
+    public async Task SearchUsername_WhenNoMatches_ReturnsEmptyList()
+    {
+        using var db = CreateDbContext();
+        var user = CreateUser("alice");
+        db.Users.Add(user);
+        var currentUser = CreateUser("bob");
+        db.Users.Add(currentUser);
+        await db.SaveChangesAsync();
+
+        var service = new UsersService(db);
+
+        var result = await service.SearchUsername("charlie", currentUser.Id);
+
+        Assert.True(result.Success);
+        Assert.Empty(result.Data!);
+    }
 }
