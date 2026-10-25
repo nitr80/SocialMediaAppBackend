@@ -47,7 +47,7 @@ public class UsersController : ControllerBase
     [HttpPatch("me/ProfilePicture")]
     public async Task<ActionResult> AddOrUpdateProfilePicture(IFormFile image)
     {
-        Result<bool> result = await _usersService.AddOrUpdateProfilePicture(image, User.GetUserId());
+        Result<string> result = await _usersService.AddOrUpdateProfilePicture(image, User.GetUserId());
 
         return result.ToActionResult(this);
     }

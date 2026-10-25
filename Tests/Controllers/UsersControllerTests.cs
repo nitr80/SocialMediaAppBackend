@@ -135,7 +135,7 @@ public class UsersControllerTests
     {
         _usersService
             .Setup(s => s.AddOrUpdateProfilePicture(It.IsAny<IFormFile>(), 42))
-            .ReturnsAsync(Result<bool>.Ok(true));
+            .ReturnsAsync(Result<string>.Ok("/images/profiles/avatar.png"));
 
         var controller = new UsersController(_usersService.Object)
         {
@@ -147,7 +147,7 @@ public class UsersControllerTests
         var result = await controller.AddOrUpdateProfilePicture(file);
 
         var ok = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(true, ok.Value);
+        Assert.Equal("/images/profiles/avatar.png", ok.Value);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public class UsersControllerTests
     {
         _usersService
             .Setup(s => s.AddOrUpdateProfilePicture(It.IsAny<IFormFile>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<bool>.Fail("Only jpg, jpeg, png and webp images are allowed", ErrorKind.Validation));
+            .ReturnsAsync(Result<string>.Fail("Only jpg, jpeg, png and webp images are allowed", ErrorKind.Validation));
 
         var controller = new UsersController(_usersService.Object)
         {

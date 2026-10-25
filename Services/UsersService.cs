@@ -47,30 +47,30 @@ public class UsersService : IUsersService
     private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
     private const long MaxImageSizeBytes = 5 * 1024 * 1024;
 
-    public async Task<Result<bool>> AddOrUpdateProfilePicture(IFormFile image, int userId)
+    public async Task<Result<string>> AddOrUpdateProfilePicture(IFormFile image, int userId)
     {
         if (image == null || image.Length == 0)
         {
-            return Result<bool>.Fail("Profile picture is required", ErrorKind.Validation);
+            return Result<string>.Fail("Profile picture is required", ErrorKind.Validation);
         }
 
         if (image.Length > MaxImageSizeBytes)
         {
-            return Result<bool>.Fail("Profile picture must be 5 MB or smaller", ErrorKind.Validation);
+            return Result<string>.Fail("Profile picture must be 5 MB or smaller", ErrorKind.Validation);
         }
 
         string extension = Path.GetExtension(image.FileName).ToLowerInvariant();
 
         if (!AllowedImageExtensions.Contains(extension))
         {
-            return Result<bool>.Fail("Only jpg, jpeg, png and webp images are allowed", ErrorKind.Validation);
+            return Result<string>.Fail("Only jpg, jpeg, png and webp images are allowed", ErrorKind.Validation);
         }
 
         User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
         {
-            return Result<bool>.Fail("User not found", ErrorKind.NotFound);
+            return Result<string>.Fail("User not found", ErrorKind.NotFound);
         }
 
         string fileName = $"{Guid.NewGuid()}{extension}";
@@ -112,7 +112,7 @@ public class UsersService : IUsersService
         user.ProfileImageUrl = $"/images/profiles/{fileName}";
         await _appDbContext.SaveChangesAsync();
 
-        return Result<bool>.Ok(true);
+        return Result<string>.Ok(user.ProfileImageUrl);
     }
 
     public async Task<Result<List<UserResponseDto>>> SearchUsername(string? search, int currentUserId)
