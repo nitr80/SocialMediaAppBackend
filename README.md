@@ -8,10 +8,17 @@ A RESTful backend for a social media application, built with **ASP.NET Core** an
 - JWT-based authentication and authorization
 - Access and refresh token handling
 - Protected API endpoints
-- Post creation and retrieval
-- Like and unlike functionality
+- Create, view and delete posts
+- A feed of your posts and posts from users you follow
+- Like and unlike posts
+- Comments and comment likes
+- Follow and unfollow users
+- Search users by username
+- Editable bio and profile picture upload
+- Rate limiting on authentication endpoints
 - SQLite database persistence
 - Entity Framework Core migrations
+- Health check endpoint
 
 ## Tech Stack
 
@@ -42,6 +49,21 @@ The API uses **JSON Web Tokens (JWT)** for authentication.
 After a successful login, the server provides an access token and a refresh token. Protected endpoints require a valid access token.
 
 Refresh tokens are used to obtain a new access token when the current access token expires.
+
+## API Overview
+
+| Area | Endpoints |
+| --- | --- |
+| Authentication | `POST /Auth/Register`, `/Auth/Login`, `/Auth/Refresh`, `/Auth/Logout` |
+| Users | `GET /Users/{id}`, `GET /Users?search=`, `PATCH /Users/me/Bio`, `PATCH /Users/me/ProfilePicture` |
+| Posts | `GET /Posts`, `GET /Posts/{id}`, `POST /Posts`, `DELETE /Posts/{id}` |
+| Post likes | `GET/POST/DELETE /Posts/{postId}/Likes`, `GET /Posts/me/Likes` |
+| Comments | `GET/POST /Posts/{postId}/Comments` |
+| Comment likes | `GET/POST/DELETE /Comments/{commentId}/Likes`, `GET /Comments/me/{postId}/Likes` |
+| Follows | `POST/DELETE /Users/{userId}/Follows`, `GET /Users/{userId}/Follows/status` |
+| Health | `GET /health` |
+
+All endpoints except registration, login, refresh and health require a valid access token.
 
 ## Database
 
@@ -99,7 +121,21 @@ The API will be available on the development URL displayed in the terminal.
 
 Application configuration can be provided through `appsettings.json`.
 
-For local development, configure the required JWT and database settings before starting the application.
+For local development, create a `.env` file in the project root with a JWT signing key:
+
+```bash
+JwtOptions__Key=<your-secret-key>
+```
+
+Migrations are applied automatically when the application starts. The SQLite database file location is configured through `DatabaseOptions:FileName`.
+
+## Tests
+
+Run the test suite with:
+
+```bash
+dotnet test
+```
 
 ## Related Project
 
