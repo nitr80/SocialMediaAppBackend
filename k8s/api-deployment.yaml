@@ -6,7 +6,7 @@ metadata:
   name: socialmediaappbackend-api
 
 spec:
-  replicas: 3     # not ideal for SQLite, change it to postgres
+  replicas: 3
 
   selector:
     matchLabels:
@@ -24,21 +24,27 @@ spec:
 
           ports:
             - containerPort: 8080
-          
-          volumeMounts:
-            - name: sqlite-data
-              mountPath: /app/data
 
           envFrom:
             - configMapRef:
                 name: socialmediaappbackend-api-config
-                
+
           env:
             - name: JwtOptions__Key
               valueFrom:
                 secretKeyRef:
                   name: socialmediaappbackend-api-secret
                   key: JwtOptions__Key
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: socialmediaappbackend-api-secret
+                  key: POSTGRES_PASSWORD
+            - name: ConnectionStrings__Default
+              valueFrom:
+                secretKeyRef:
+                  name: socialmediaappbackend-api-secret
+                  key: ConnectionStrings__Default
 
           startupProbe:
             httpGet:
@@ -67,8 +73,3 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
-              
-      volumes:
-        - name: sqlite-data
-          persistentVolumeClaim:
-            claimName: socialmediaappbackend-api-data

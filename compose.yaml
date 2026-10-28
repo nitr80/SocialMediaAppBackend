@@ -1,31 +1,60 @@
 # DEVELOPMENT
 
 # services:
+#   db:
+#     image: postgres:18
+#     environment:
+#       POSTGRES_DB: socialmediaapp
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: postgres
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - postgres-data:/var/lib/postgresql
+#     networks:
+#       - app-network
+
 #   api:
 #     build: .
 #     ports:
 #       - "8080:8080"
-
+#     depends_on:
+#       - db
 #     environment:
-#       ASPNETCORE_ENVIRONMENT: Docker
-#       DatabaseOptions__Filename: "/app/data/social-media-app.db"
+#       ASPNETCORE_ENVIRONMENT: Development
+#       ASPNETCORE_HTTP_PORTS: 8080
 #       JwtOptions__Key: ${JWT_SECRET}
-
-#     volumes:
-#       - sqlite-data:/app/data
+#       ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=postgres
+#     networks:
+#       - app-network
 
 # volumes:
-#   sqlite-data:
+#   postgres-data:
 
 
 
 # DEPLOYMENT
 
 services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    # ports:
+    #   - "5432:5432"
+    environment:
+      POSTGRES_DB: socialmediaapp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - app-network
+
   api:
     image: nitr80/socialmediaappbackend-api:latest
     # image: nitr80/socialmediaappbackend-api:1.0.0
-    
+    depends_on:
+      - db
     # ports:
     #   - "8080:8080"
     expose:
@@ -34,9 +63,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
       JwtOptions__Key: ${JWT_SECRET}
-      DatabaseOptions__Filename: "/app/data/social-media-app.db"
-    volumes:
-      - sqlite-data:/app/data
+      ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD}
     networks:
       - app-network
 
@@ -53,7 +80,7 @@ services:
       - app-network
 
 volumes:
-  sqlite-data:
+  postgres-data:
   caddy-data:
   caddy-config:
 

@@ -1,5 +1,6 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
+using System;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SocialMediaAppBackend.Data;
 using SocialMediaAppBackend.Models;
@@ -13,7 +14,8 @@ public class UsersServiceTests
 {
     private static AppDbContext CreateDbContext()
     {
-        // SQLite in-memory needs the connection kept open for the DB's lifetime.
+        // SQLite in-memory needs the connection kept open for the DB's lifetime,
+        // and it supports ExecuteDelete/ExecuteUpdate which the InMemory provider does not.
         var connection = new SqliteConnection("Data Source=:memory:");
         connection.Open();
 

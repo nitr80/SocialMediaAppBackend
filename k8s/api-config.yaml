@@ -7,5 +7,4 @@ metadata:
 
 data:
   ASPNETCORE_ENVIRONMENT: Docker
-  # DatabaseOptions__Filename: social-media-app.db
-  DatabaseOptions__Filename: /app/data/social-media-app.db
+  ConnectionStrings__Default: Host=postgres;Port=5432;Database=socialmediaapp;Username=postgres;Password=$(POSTGRES_PASSWORD)

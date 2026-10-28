@@ -29,11 +29,15 @@ if (string.IsNullOrWhiteSpace(jwtKey) || string.IsNullOrWhiteSpace(jwtIssuer) ||
     throw new InvalidOperationException("JwtOptions:Key, JwtOptions:Issuer and JwtOptions:Audience must be configured.");
 }
 
-var dbFileName = builder.Configuration["DatabaseOptions:FileName"];
+string connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? builder.Configuration["ConnectionStrings:Default"]
+    ?? builder.Configuration["DatabaseOptions:ConnectionString"]
+    ?? string.Empty;
 
-var folder = Environment.SpecialFolder.LocalApplicationData;
-var path = Environment.GetFolderPath(folder);
-var dbPath = Path.Join(path, dbFileName);
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("ConnectionStrings:Default must be configured.");
+}
 
 // Add services to the container.
 
@@ -78,7 +82,7 @@ builder.Services.AddScoped<IFollowsService, FollowsService>();
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlite($"Data Source={dbPath}");
+    options.UseNpgsql(connectionString);
 });
 
 // Options
@@ -201,9 +205,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 
-    // Refresh tokens are stored as SHA-256 hashes (64 hex chars) as of this
-    // release. Rows written before that hold plaintext, can never match a
-    // hashed lookup, and are removed so they are not kept at rest.
+    // Refresh tokens are stored as SHA-256 hashes (64 hex chars).
     db.RefreshTokens.Where(rt => rt.Token.Length != 64).ExecuteDelete();
 }
 

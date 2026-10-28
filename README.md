@@ -16,7 +16,7 @@ A RESTful backend for a social media application, built with **ASP.NET Core** an
 - Search users by username
 - Editable bio and profile picture upload
 - Rate limiting on authentication endpoints
-- SQLite database persistence
+- PostgreSQL database persistence
 - Entity Framework Core migrations
 - Health check endpoint
 
@@ -25,7 +25,7 @@ A RESTful backend for a social media application, built with **ASP.NET Core** an
 - **C#**
 - **ASP.NET Core**
 - **Entity Framework Core**
-- **SQLite**
+- **PostgreSQL**
 - **JWT**
 - **REST API**
 
@@ -67,7 +67,7 @@ All endpoints except registration, login, refresh and health require a valid acc
 
 ## Database
 
-The application uses **SQLite** with **Entity Framework Core** for data persistence.
+The application uses **PostgreSQL** with **Entity Framework Core** for data persistence.
 
 Database changes are managed using EF Core migrations.
 
@@ -121,13 +121,14 @@ The API will be available on the development URL displayed in the terminal.
 
 Application configuration can be provided through `appsettings.json`.
 
-For local development, create a `.env` file in the project root with a JWT signing key:
+For local development, create a `.env` file in the project root with a JWT signing key and a PostgreSQL connection string:
 
 ```bash
 JwtOptions__Key=<your-secret-key>
+ConnectionStrings__Default=Host=localhost;Port=5432;Database=socialmediaapp;Username=postgres;Password=postgres
 ```
 
-Migrations are applied automatically when the application starts. The SQLite database file location is configured through `DatabaseOptions:FileName`.
+Migrations are applied automatically when the application starts. The app targets **PostgreSQL 18**.
 
 ## Tests
 
