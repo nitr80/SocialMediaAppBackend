@@ -85,37 +85,76 @@ dotnet ef migrations add <MigrationName>
 
 ## Running the API
 
-### Prerequisites
+You can run the API in one of two ways:
+
+### Option 1: Start a separate PostgreSQL instance and run the project with `dotnet run`
+
+#### Prerequisites
 
 - [.NET SDK](https://dotnet.microsoft.com/download)
 - Entity Framework Core CLI
+- A running PostgreSQL instance
 
-Clone the repository and navigate to the project directory:
+#### Steps
+
+1. Clone the repository and navigate to the project directory:
 
 ```bash
 git clone <repository-url>
 cd <repository-directory>
 ```
 
-Restore dependencies:
+2. Restore dependencies:
 
 ```bash
 dotnet restore
 ```
 
-Apply the database migrations:
+3. Configure your connection string and JWT key (see [Configuration](#configuration)).
+
+4. Apply the database migrations:
 
 ```bash
 dotnet ef database update
 ```
 
-Start the development server:
+5. Start the development server:
 
 ```bash
 dotnet run
 ```
 
 The API will be available on the development URL displayed in the terminal.
+
+### Option 2: Start the project using Docker Compose
+
+#### Prerequisites
+
+- [Docker](https://www.docker.com/get-started)
+
+#### Steps
+
+1. Clone the repository and navigate to the project directory:
+
+```bash
+git clone <repository-url>
+cd <repository-directory>
+```
+
+2. Create a `.env` file in the project root with the required secrets:
+
+```bash
+JWT_SECRET=<your-secret-key>
+POSTGRES_PASSWORD=<your-postgres-password>
+```
+
+3. Start the project using Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+This will start PostgreSQL, the API, and Caddy as configured in `compose.yaml`.
 
 ## Configuration
 
@@ -146,4 +185,4 @@ This backend is used by the corresponding React frontend:
 
 ## Purpose
 
-This project was developed as a personal project to gain practical experience with **backend development, REST APIs, authentication, database management, and Entity Framework Core**.
+This project was developed as a personal project to gain practical experience with **backend development, REST APIs, authentication, database management, Docker, and Entity Framework Core**.
