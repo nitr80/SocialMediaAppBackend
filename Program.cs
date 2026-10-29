@@ -18,6 +18,11 @@ Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.AddServerHeader = false;
+});
+
 var jwtOptions = builder.Configuration.GetSection("JwtOptions");
 
 string jwtKey = jwtOptions["Key"] ?? string.Empty;
@@ -106,8 +111,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // CORS policy
-string[] allowedOrigins = builder.Configuration.GetSection("CorsOptions:AllowedOrigins").Get<string[]>()
-    ?? ["http://localhost:5173"];
+string[]? configuredOrigins = builder.Configuration.GetSection("CorsOptions:AllowedOrigins").Get<string[]>();
+
+string[] allowedOrigins;
+if (builder.Environment.IsDevelopment())
+{
+    allowedOrigins = configuredOrigins is { Length: > 0 }
+        ? configuredOrigins
+        : ["http://localhost:5173"];
+}
+else
+{
+    if (configuredOrigins == null || configuredOrigins.Length == 0)
+    {
+        throw new InvalidOperationException("CorsOptions:AllowedOrigins must be configured outside of Development.");
+    }
+
+    // TODO uncomment after getting a domain name and configuring it in the caddyfile
+    // if (builder.Environment.IsProduction() && configuredOrigins.Any(origin => !origin.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+    // {
+    //     throw new InvalidOperationException("CorsOptions:AllowedOrigins must only use HTTPS in Production.");
+    // }
+
+    allowedOrigins = configuredOrigins;
+}
 
 builder.Services.AddCors(options =>
 {
@@ -115,9 +142,10 @@ builder.Services.AddCors(options =>
         policy =>
         {
             policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+                .WithMethods("GET", "POST", "PATCH", "DELETE", "OPTIONS")
+                .WithHeaders("Content-Type", "Authorization", "X-Requested-With", "Accept")
+                .AllowCredentials()
+                .SetPreflightMaxAge(TimeSpan.FromHours(1));
         });
 });
 
@@ -186,6 +214,8 @@ var app = builder.Build();
 // Must run first so later middleware sees the real client IP.
 app.UseForwardedHeaders();
 
+app.UseSecurityHeaders();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -214,10 +244,10 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseStaticFiles();
+
 app.MapHealthChecks("/health");
 
 app.MapControllers();
-
-app.UseStaticFiles();
 
 app.Run();
