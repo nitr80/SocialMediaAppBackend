@@ -31,16 +31,12 @@
 # volumes:
 #   postgres-data:
 
-
-
 # DEPLOYMENT
 
 services:
   db:
     image: postgres:18
     restart: unless-stopped
-    # ports:
-    #   - "5432:5432"
     environment:
       POSTGRES_DB: socialmediaapp
       POSTGRES_USER: postgres
@@ -51,6 +47,7 @@ services:
       - app-network
 
   api:
+    build: .
     image: nitr80/socialmediaappbackend-api:latest
     # image: nitr80/socialmediaappbackend-api:1.0.0
     depends_on:
@@ -64,6 +61,8 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       JwtOptions__Key: ${JWT_SECRET}
       ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD}
+    volumes:
+      - api-uploads:/app/wwwroot/images/profiles
     networks:
       - app-network
 
@@ -81,6 +80,7 @@ services:
 
 volumes:
   postgres-data:
+  api-uploads:
   caddy-data:
   caddy-config:
 
