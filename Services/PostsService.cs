@@ -6,6 +6,9 @@ using SocialMediaAppBackend.Mappings;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
 using SocialMediaAppBackend.Services.Interfaces;
+using System.Text.Json;
+using System.Text;
+using SocialMediaAppBackend.DTOs;
 
 namespace SocialMediaAppBackend.Services;
 
@@ -53,14 +56,49 @@ public class PostsService : IPostsService
         return Result<bool>.Ok(true);
     }
 
-    public async Task<Result<List<PostResponseDto>>> GetAllPosts(int currentUserId)
+    public async Task<Result<PagedList<PostResponseDto>>> GetAllPosts(
+        int currentUserId,
+        int? limit,
+        string? cursor)
     {
-        List<PostResponseDto> postList = await _appDbContext.Posts
+        limit ??= 15;
+
+        if (limit <= 0 || limit > 100)
+        {
+            return Result<PagedList<PostResponseDto>>.Fail("Limit must be between 1 and 100");
+        }
+
+        PostCursor? postCursor = null;
+
+        if (!string.IsNullOrWhiteSpace(cursor))
+        {
+            try
+            {
+                postCursor = PostCursor.DecodePostCursor(cursor);
+            }
+            catch
+            {
+                return Result<PagedList<PostResponseDto>>.Fail("Invalid cursor");
+            }
+        }
+
+        var query = _appDbContext.Posts
             .Where(p => p.AuthorId == currentUserId ||
-                _appDbContext.Follows.Any(
-                    f => f.FollowerId == currentUserId &&
-                    f.FollowedUserId == p.AuthorId))
+                _appDbContext.Follows.Any(f =>
+                    f.FollowerId == currentUserId &&
+                    f.FollowedUserId == p.AuthorId));
+
+        if (postCursor != null)
+        {
+            query = query.Where(p =>
+                p.CreatedAt < postCursor.CreatedAt ||
+                (p.CreatedAt == postCursor.CreatedAt &&
+                p.Id < postCursor.Id));
+        }
+
+        var postList = await query
             .OrderByDescending(p => p.CreatedAt)
+            .ThenByDescending(p => p.Id)
             .Select(p => new PostResponseDto
             {
                 Id = p.Id,
@@ -77,9 +115,29 @@ public class PostsService : IPostsService
                     ProfileImageUrl = p.Author.ProfileImageUrl
                 }
             })
+            .Take(limit.Value + 1)
             .ToListAsync();
 
-        return Result<List<PostResponseDto>>.Ok(postList);
+        bool hasMore = postList.Count > limit.Value;
+
+        if (hasMore)
+        {
+            postList.RemoveAt(postList.Count - 1);
+        }
+
+        var lastPost = postList.LastOrDefault();
+
+        string? nextCursor = hasMore && lastPost != null
+            ? PostCursor.EncodePostCursor(new PostCursor(lastPost.CreatedAt, lastPost.Id))
+            : null;
+
+        var pagedList = new PagedList<PostResponseDto>
+        {
+            Values = postList,
+            Cursor = nextCursor
+        };
+
+        return Result<PagedList<PostResponseDto>>.Ok(pagedList);
     }
 
     public async Task<Result<Post>> GetPostById(int postId, int currentUserId)

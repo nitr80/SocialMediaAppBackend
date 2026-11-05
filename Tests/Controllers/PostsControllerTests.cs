@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SocialMediaAppBackend.Controllers;
+using SocialMediaAppBackend.DTOs;
 using SocialMediaAppBackend.DTOs.Post;
 using SocialMediaAppBackend.DTOs.User;
 using SocialMediaAppBackend.Models;
@@ -77,18 +78,36 @@ public class PostsControllerTests
         };
 
         _postsService
-            .Setup(s => s.GetAllPosts(42))
-            .ReturnsAsync(Result<List<PostResponseDto>>.Ok(posts));
+            .Setup(s => s.GetAllPosts(42, null, null))
+            .ReturnsAsync(Result<PagedList<PostResponseDto>>.Ok(new PagedList<PostResponseDto> { Values = posts, Cursor = null }));
 
         var controller = new PostsController(_postsService.Object)
         {
             ControllerContext = BuildControllerContextWithUserId(42)
         };
 
-        var result = await controller.GetAll();
+        var result = await controller.GetAll(null, null);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        Assert.Same(posts, ok.Value);
+        Assert.Same(posts, (ok.Value as PagedList<PostResponseDto>)?.Values);
+    }
+
+    [Fact]
+    public async Task GetAll_WhenCursorIsInvalid_ReturnsBadRequestWithMessage()
+    {
+        _postsService
+            .Setup(s => s.GetAllPosts(42, 10, "invalid-cursor"))
+            .ReturnsAsync(Result<PagedList<PostResponseDto>>.Fail("Invalid cursor", ErrorKind.Validation));
+
+        var controller = new PostsController(_postsService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(42)
+        };
+
+        var result = await controller.GetAll(10, "invalid-cursor");
+
+        var objectResult = Assert.IsAssignableFrom<ObjectResult>(result.Result);
+        AssertMessageResult(objectResult, StatusCodes.Status400BadRequest, "Invalid cursor");
     }
 
     // ---------- GetById ----------

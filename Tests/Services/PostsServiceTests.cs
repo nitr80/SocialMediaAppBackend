@@ -179,21 +179,21 @@ public class PostsServiceTests
 
         var service = new PostsService(db);
 
-        var result = await service.GetAllPosts(author.Id);
+        var result = await service.GetAllPosts(author.Id, 10, null);
 
         Assert.True(result.Success);
         Assert.NotNull(result.Data);
-        Assert.Equal(2, result.Data!.Count);
+        Assert.Equal(2, result.Data!.Values.Count);
 
         // newest first
-        Assert.Equal("newer", result.Data[0].Content);
-        Assert.Equal("older", result.Data[1].Content);
+        Assert.Equal("newer", result.Data.Values[0].Content);
+        Assert.Equal("older", result.Data.Values[1].Content);
 
-        Assert.Equal(1, result.Data[0].LikeCount);
-        Assert.Equal(1, result.Data[0].CommentCount);
-        Assert.Equal("alice", result.Data[0].Author.Username);
-        Assert.Equal(0, result.Data[1].LikeCount);
-        Assert.Equal(0, result.Data[1].CommentCount);
+        Assert.Equal(1, result.Data.Values[0].LikeCount);
+        Assert.Equal(1, result.Data.Values[0].CommentCount);
+        Assert.Equal("alice", result.Data.Values[0].Author.Username);
+        Assert.Equal(0, result.Data.Values[1].LikeCount);
+        Assert.Equal(0, result.Data.Values[1].CommentCount);
     }
 
     [Fact]
@@ -230,21 +230,21 @@ public class PostsServiceTests
 
         var service = new PostsService(db);
 
-        var result = await service.GetAllPosts(follower.Id);
+        var result = await service.GetAllPosts(follower.Id, 10, null);
 
         Assert.True(result.Success);
         Assert.NotNull(result.Data);
-        Assert.Equal(2, result.Data!.Count);
+        Assert.Equal(2, result.Data!.Values.Count);
 
         // newest first
-        Assert.Equal("newer", result.Data[0].Content);
-        Assert.Equal("older", result.Data[1].Content);
+        Assert.Equal("newer", result.Data.Values[0].Content);
+        Assert.Equal("older", result.Data.Values[1].Content);
 
-        Assert.Equal(1, result.Data[0].LikeCount);
-        Assert.Equal(1, result.Data[0].CommentCount);
-        Assert.Equal("alice", result.Data[0].Author.Username);
-        Assert.Equal(0, result.Data[1].LikeCount);
-        Assert.Equal(0, result.Data[1].CommentCount);
+        Assert.Equal(1, result.Data.Values[0].LikeCount);
+        Assert.Equal(1, result.Data.Values[0].CommentCount);
+        Assert.Equal("alice", result.Data.Values[0].Author.Username);
+        Assert.Equal(0, result.Data.Values[1].LikeCount);
+        Assert.Equal(0, result.Data.Values[1].CommentCount);
     }
 
     [Fact]
@@ -262,11 +262,154 @@ public class PostsServiceTests
 
         var service = new PostsService(db);
 
-        var result = await service.GetAllPosts(other.Id);
+        var result = await service.GetAllPosts(other.Id, 10, null);
 
         Assert.True(result.Success);
         Assert.NotNull(result.Data);
-        Assert.Empty(result.Data!);
+        Assert.Empty(result.Data!.Values);
+    }
+
+    [Fact]
+    public async Task GetAllPosts_WhenLimitIsValid_ReturnsPosts()
+    {
+        using var db = CreateDbContext();
+        var author = CreateUser("alice");
+        var follower = CreateUser("bob");
+        db.Users.Add(author);
+        db.Users.Add(follower);
+        await db.SaveChangesAsync();
+
+        var post = new Post { Content = "Hello", AuthorId = author.Id };
+        var post2 = new Post { Content = "World", AuthorId = author.Id };
+        db.Posts.Add(post);
+        db.Posts.Add(post2);
+        await db.SaveChangesAsync();
+
+        db.Follows.Add(new Follow { FollowerId = follower.Id, FollowedUserId = author.Id });
+        await db.SaveChangesAsync();
+
+        var service = new PostsService(db);
+
+        var result = await service.GetAllPosts(follower.Id, 1, null);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Single(result.Data!.Values);
+    }
+
+    [Fact]
+    public async Task GetAllPosts_WhenLimitIsInvalid_ReturnsFail()
+    {
+        using var db = CreateDbContext();
+        var service = new PostsService(db);
+
+        var result = await service.GetAllPosts(1, -1, null);
+
+        Assert.False(result.Success);
+        Assert.Equal(ErrorKind.Validation, result.Kind);
+    }
+
+    [Fact]
+    public async Task GetAllPosts_WhenLimitIsTooHigh_ReturnsFail()
+    {
+        using var db = CreateDbContext();
+        var service = new PostsService(db);
+
+        var result = await service.GetAllPosts(1, 101, null);
+
+        Assert.False(result.Success);
+        Assert.Equal(ErrorKind.Validation, result.Kind);
+    }
+
+    [Fact]
+    public async Task GetAllPosts_WhenCursorIsValid_ReturnsPostsAfterCursor()
+    {
+        using var db = CreateDbContext();
+        var author = CreateUser("alice");
+        var follower = CreateUser("bob");
+        db.Users.Add(author);
+        db.Users.Add(follower);
+        await db.SaveChangesAsync();
+
+        var older = new Post
+        {
+            Content = "older",
+            AuthorId = author.Id,
+            CreatedAt = DateTime.UtcNow.AddMinutes(-10)
+        };
+        var newer = new Post
+        {
+            Content = "newer",
+            AuthorId = author.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        db.Posts.AddRange(older, newer);
+        await db.SaveChangesAsync();
+
+        db.Follows.Add(new Follow { FollowerId = follower.Id, FollowedUserId = author.Id });
+        await db.SaveChangesAsync();
+
+        var service = new PostsService(db);
+
+        string cursor = PostCursor.EncodePostCursor(new PostCursor(newer.CreatedAt, newer.Id));
+
+        var result = await service.GetAllPosts(follower.Id, 10, cursor);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Single(result.Data!.Values);
+        Assert.Equal("older", result.Data.Values[0].Content);
+    }
+
+    [Fact]
+    public async Task GetAllPosts_WhenCursorIsNullAndHasMore_ReturnsNextCursor()
+    {
+        using var db = CreateDbContext();
+        var author = CreateUser("alice");
+        var follower = CreateUser("bob");
+        db.Users.Add(author);
+        db.Users.Add(follower);
+        await db.SaveChangesAsync();
+
+        var older = new Post
+        {
+            Content = "older",
+            AuthorId = author.Id,
+            CreatedAt = DateTime.UtcNow.AddMinutes(-10)
+        };
+        var newer = new Post
+        {
+            Content = "newer",
+            AuthorId = author.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        db.Posts.AddRange(older, newer);
+        await db.SaveChangesAsync();
+
+        db.Follows.Add(new Follow { FollowerId = follower.Id, FollowedUserId = author.Id });
+        await db.SaveChangesAsync();
+
+        var service = new PostsService(db);
+
+        var result = await service.GetAllPosts(follower.Id, 1, null);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Data);
+        Assert.Equal("newer", result.Data.Values[0].Content);
+        Assert.NotNull(result.Data.Cursor);
+        Assert.Equal(PostCursor.DecodePostCursor(result.Data.Cursor).CreatedAt, newer.CreatedAt);
+    }
+
+    [Fact]
+    public async Task GetAllPosts_WhenCursorIsInvalid_ReturnsFail()
+    {
+        using var db = CreateDbContext();
+        var service = new PostsService(db);
+
+        var result = await service.GetAllPosts(1, 10, "invalid-cursor");
+
+        Assert.False(result.Success);
+        Assert.Equal(ErrorKind.Validation, result.Kind);
     }
 
     // ---------- DeletePostById ----------

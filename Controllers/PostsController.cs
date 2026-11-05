@@ -7,6 +7,7 @@ using SocialMediaAppBackend.Mappings;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
 using SocialMediaAppBackend.Services.Interfaces;
+using SocialMediaAppBackend.DTOs;
 
 namespace SocialMediaAppBackend.Controllers;
 
@@ -23,9 +24,9 @@ public class PostsController : ControllerBase
 
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<List<PostResponseDto>>> GetAll()
+    public async Task<ActionResult<PagedList<PostResponseDto>>> GetAll([FromQuery] int? limit, [FromQuery] string? cursor)
     {
-        Result<List<PostResponseDto>> result = await _postsService.GetAllPosts(User.GetUserId());
+        Result<PagedList<PostResponseDto>> result = await _postsService.GetAllPosts(User.GetUserId(), limit, cursor);
 
         if (!result.Success)
         {

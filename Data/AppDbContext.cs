@@ -31,5 +31,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<RefreshToken>().HasIndex(x => x.Token).IsUnique();
 
         modelBuilder.Entity<Follow>().HasIndex(f => new { f.FollowerId, f.FollowedUserId }).IsUnique();
+
+        modelBuilder.Entity<Post>().HasIndex(p => new { p.Id, p.CreatedAt }).IsUnique();
     }
 }
