@@ -18,6 +18,11 @@ public class FollowsService : IFollowsService
 
     public async Task<Result<bool>> FollowUser(int followedUserId, int followerId)
     {
+        if (followedUserId == followerId)
+        {
+            return Result<bool>.Fail("Users cannot follow themselves", ErrorKind.Validation);
+        }
+
         var userExists = await _appDbContext.Users.AnyAsync(u => u.Id == followedUserId);
         if (!userExists)
         {
@@ -37,7 +42,16 @@ public class FollowsService : IFollowsService
         };
 
         await _appDbContext.Follows.AddAsync(follow);
-        await _appDbContext.SaveChangesAsync();
+
+        try
+        {
+            await _appDbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return Result<bool>.Fail("Already following this user", ErrorKind.Conflict);
+        }
+
         return Result<bool>.Ok(true);
     }
 

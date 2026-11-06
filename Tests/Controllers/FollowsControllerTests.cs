@@ -93,6 +93,24 @@ public class FollowsControllerTests
     }
 
     [Fact]
+    public async Task FollowUser_WhenSelfFollowing_ReturnsBadRequest()
+    {
+        _followsService
+            .Setup(s => s.FollowUser(1, 1))
+            .ReturnsAsync(Result<bool>.Fail("Users cannot follow themselves", ErrorKind.Validation));
+
+        var controller = new FollowsController(_followsService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(1)
+        };
+
+        var result = await controller.FollowUser(1);
+
+        var objectResult = Assert.IsAssignableFrom<ObjectResult>(result);
+        AssertMessageResult(objectResult, StatusCodes.Status400BadRequest, "Users cannot follow themselves");
+    }
+
+    [Fact]
     public async Task UnfollowUser_WhenUnfollowIsSuccessful_ReturnsNoContentResult()
     {
         _followsService

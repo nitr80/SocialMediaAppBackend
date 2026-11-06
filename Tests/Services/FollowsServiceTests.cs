@@ -65,6 +65,23 @@ public class FollowsServiceTests
     }
 
     [Fact]
+    public async Task FollowUser_WhenSelfFollowing_ReturnsValidationError()
+    {
+        using var db = CreateDbContext();
+        var user1 = CreateUser("user1");
+        db.Users.Add(user1);
+        await db.SaveChangesAsync();
+
+        var service = new FollowsService(db);
+        var result = await service.FollowUser(user1.Id, user1.Id);
+
+        Assert.False(result.Success);
+        Assert.Equal(ErrorKind.Validation, result.Kind);
+        Assert.Equal("Users cannot follow themselves", result.Error);
+        Assert.False(await db.Follows.AnyAsync());
+    }
+
+    [Fact]
     public async Task FollowUser_WhenAlreadyFollowing_ReturnsError()
     {
         using var db = CreateDbContext();
@@ -82,6 +99,39 @@ public class FollowsServiceTests
         Assert.False(result.Success);
         Assert.Equal(ErrorKind.Conflict, result.Kind);
         Assert.Equal(1, await db.Follows.CountAsync());
+    }
+
+    private class ThrowingDbContext : AppDbContext
+    {
+        public ThrowingDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            throw new DbUpdateException("Duplicate key violation", (Exception?)null);
+        }
+    }
+
+    [Fact]
+    public async Task FollowUser_WhenDbUpdateExceptionOccurs_ReturnsConflict()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).Options;
+
+        using var db = new AppDbContext(options);
+        db.Database.EnsureCreated();
+        var user1 = CreateUser("user1");
+        var user2 = CreateUser("user2");
+        db.Users.AddRange(user1, user2);
+        await db.SaveChangesAsync();
+
+        using var throwingDb = new ThrowingDbContext(options);
+        var service = new FollowsService(throwingDb);
+        var result = await service.FollowUser(user2.Id, user1.Id);
+
+        Assert.False(result.Success);
+        Assert.Equal(ErrorKind.Conflict, result.Kind);
+        Assert.Equal("Already following this user", result.Error);
     }
 
 
