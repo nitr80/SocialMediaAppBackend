@@ -47,7 +47,7 @@ public class PostsController : ControllerBase
             return result.ToActionResult(this);
         }
 
-        return Ok(PostMappings.ToResponseDto(result.Data!));
+        return Ok(PostMappings.ToResponseDto(result.Data!, User.GetUserId()));
     }
 
     [Authorize]
@@ -63,7 +63,7 @@ public class PostsController : ControllerBase
             return result.ToActionResult(this);
         }
 
-        PostResponseDto postResponseDto = PostMappings.ToResponseDto(result.Data!);
+        PostResponseDto postResponseDto = PostMappings.ToResponseDto(result.Data!, User.GetUserId());
         return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, postResponseDto);
     }
 

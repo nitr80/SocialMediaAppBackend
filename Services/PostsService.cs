@@ -105,6 +105,7 @@ public class PostsService : IPostsService
                 Content = p.Content,
                 CreatedAt = p.CreatedAt,
                 LikeCount = p.Likes.Count(),
+                HasLiked = p.Likes.Any(l => l.UserId == currentUserId),
                 CommentCount = p.Comments.Count(),
                 Author = new DTOs.User.UserResponseDto
                 {

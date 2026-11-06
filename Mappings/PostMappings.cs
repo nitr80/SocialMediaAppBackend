@@ -5,7 +5,7 @@ namespace SocialMediaAppBackend.Mappings;
 
 public static class PostMappings
 {
-    public static PostResponseDto ToResponseDto(Post post)
+    public static PostResponseDto ToResponseDto(Post post, int currentUserId)
     {
         return new PostResponseDto
         {
@@ -14,6 +14,7 @@ public static class PostMappings
             Author = UserMappings.ToResponseDto(post.Author),
             CreatedAt = post.CreatedAt,
             LikeCount = post.Likes.Count,
+            HasLiked = post.Likes.Any(l => l.UserId == currentUserId),
             CommentCount = post.Comments.Count
         };
     }

@@ -4,6 +4,6 @@ namespace SocialMediaAppBackend.DTOs;
 
 public class PagedList<T>
 {
-    public List<T> Values = new List<T>();
-    public string? Cursor;
+    public List<T> Values { get; set; } = new();
+    public string? Cursor { get; set; }
 }
