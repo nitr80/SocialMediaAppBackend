@@ -17,6 +17,17 @@ public static class UserMappings
         };
     }
 
+    public static UserPublicDto ToPublicDto(User user)
+    {
+        return new UserPublicDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Bio = user.Bio,
+            ProfileImageUrl = user.ProfileImageUrl
+        };
+    }
+
     public static string ToBioString(UserBioRequestDto userBioRequestDto)
     {
         return userBioRequestDto.Bio;

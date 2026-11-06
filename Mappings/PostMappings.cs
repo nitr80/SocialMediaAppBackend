@@ -11,7 +11,7 @@ public static class PostMappings
         {
             Id = post.Id,
             Content = post.Content,
-            Author = UserMappings.ToResponseDto(post.Author),
+            Author = UserMappings.ToPublicDto(post.Author),
             CreatedAt = post.CreatedAt,
             LikeCount = post.Likes.Count,
             HasLiked = post.Likes.Any(l => l.UserId == currentUserId),

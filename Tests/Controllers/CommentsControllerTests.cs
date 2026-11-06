@@ -92,7 +92,7 @@ public class CommentsControllerTests
                 Id = 1,
                 Content = "nice post",
                 PostId = 7,
-                Author = new UserResponseDto { Id = 42, Username = "alice", Email = "alice@example.com" }
+                Author = new UserPublicDto { Id = 42, Username = "alice" }
             }
         };
 

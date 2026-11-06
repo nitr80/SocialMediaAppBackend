@@ -12,5 +12,5 @@ public class CommentResponseDto
     public int LikeCount { get; set; }
     public int PostId { get; set; }
     [Required]
-    public required UserResponseDto Author { get; set; }
+    public required UserPublicDto Author { get; set; }
 }

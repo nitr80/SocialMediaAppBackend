@@ -58,13 +58,16 @@ public class UsersControllerTests
     // ---------- GetById ----------
 
     [Fact]
-    public async Task GetById_WhenUserExists_ReturnsOkWithMappedDto()
+    public async Task GetById_WhenViewingOwnProfile_ReturnsOkWithUserResponseDto()
     {
         _usersService
             .Setup(s => s.GetUserById(1))
             .ReturnsAsync(Result<User>.Ok(SampleUser()));
 
-        var controller = new UsersController(_usersService.Object);
+        var controller = new UsersController(_usersService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(1)
+        };
 
         var result = await controller.GetById(1);
 
@@ -76,13 +79,36 @@ public class UsersControllerTests
     }
 
     [Fact]
+    public async Task GetById_WhenViewingOtherUserProfile_ReturnsOkWithUserPublicDto()
+    {
+        _usersService
+            .Setup(s => s.GetUserById(1))
+            .ReturnsAsync(Result<User>.Ok(SampleUser()));
+
+        var controller = new UsersController(_usersService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(42)
+        };
+
+        var result = await controller.GetById(1);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var dto = Assert.IsType<UserPublicDto>(ok.Value);
+        Assert.Equal(1, dto.Id);
+        Assert.Equal("alice", dto.Username);
+    }
+
+    [Fact]
     public async Task GetById_WhenUserMissing_ReturnsNotFoundWithMessage()
     {
         _usersService
             .Setup(s => s.GetUserById(999))
             .ReturnsAsync(Result<User>.Fail("User not found", ErrorKind.NotFound));
 
-        var controller = new UsersController(_usersService.Object);
+        var controller = new UsersController(_usersService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(1)
+        };
 
         var result = await controller.GetById(999);
 
@@ -177,7 +203,7 @@ public class UsersControllerTests
     {
         _usersService
             .Setup(s => s.SearchUsername("john", 42))
-            .ReturnsAsync(Result<List<UserResponseDto>>.Ok(new List<UserResponseDto>()));
+            .ReturnsAsync(Result<List<UserPublicDto>>.Ok(new List<UserPublicDto>()));
 
         var controller = new UsersController(_usersService.Object)
         {
@@ -194,7 +220,7 @@ public class UsersControllerTests
     {
         _usersService
             .Setup(s => s.SearchUsername(null, 42))
-            .ReturnsAsync(Result<List<UserResponseDto>>.Ok(new List<UserResponseDto>()));
+            .ReturnsAsync(Result<List<UserPublicDto>>.Ok(new List<UserPublicDto>()));
 
         var controller = new UsersController(_usersService.Object)
         {

@@ -107,11 +107,10 @@ public class PostsService : IPostsService
                 LikeCount = p.Likes.Count(),
                 HasLiked = p.Likes.Any(l => l.UserId == currentUserId),
                 CommentCount = p.Comments.Count(),
-                Author = new DTOs.User.UserResponseDto
+                Author = new DTOs.User.UserPublicDto
                 {
                     Id = p.Author.Id,
                     Username = p.Author.Username,
-                    Email = p.Author.Email,
                     Bio = p.Author.Bio,
                     ProfileImageUrl = p.Author.ProfileImageUrl
                 }

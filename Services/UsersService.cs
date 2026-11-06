@@ -115,7 +115,7 @@ public class UsersService : IUsersService
         return Result<string>.Ok(user.ProfileImageUrl);
     }
 
-    public async Task<Result<List<UserResponseDto>>> SearchUsername(string? search, int currentUserId)
+    public async Task<Result<List<UserPublicDto>>> SearchUsername(string? search, int currentUserId)
     {
         IQueryable<User> query = _appDbContext.Users;
 
@@ -131,10 +131,10 @@ public class UsersService : IUsersService
             query = query.Where(u => u.Id != currentUserId).Take(10);
         }
 
-        List<UserResponseDto> users = await query
-            .Select(u => UserMappings.ToResponseDto(u))
+        List<UserPublicDto> users = await query
+            .Select(u => UserMappings.ToPublicDto(u))
             .ToListAsync();
 
-        return Result<List<UserResponseDto>>.Ok(users);
+        return Result<List<UserPublicDto>>.Ok(users);
     }
 }

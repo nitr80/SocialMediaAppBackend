@@ -31,7 +31,12 @@ public class UsersController : ControllerBase
             return result.ToActionResult(this);
         }
 
-        return Ok(UserMappings.ToResponseDto(result.Data!));
+        if (id == User.GetUserId())
+        {
+            return Ok(UserMappings.ToResponseDto(result.Data!));
+        }
+
+        return Ok(UserMappings.ToPublicDto(result.Data!));
     }
 
     [Authorize]
@@ -54,9 +59,9 @@ public class UsersController : ControllerBase
 
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<List<UserResponseDto>>> SearchUsername([FromQuery] string? search)
+    public async Task<ActionResult<List<UserPublicDto>>> SearchUsername([FromQuery] string? search)
     {
-        Result<List<UserResponseDto>> result = await _usersService.SearchUsername(search, User.GetUserId());
+        Result<List<UserPublicDto>> result = await _usersService.SearchUsername(search, User.GetUserId());
 
         return result.ToActionResult(this);
     }

@@ -51,11 +51,10 @@ public class CommentsService : ICommentsService
                 CreatedAt = c.CreatedAt,
                 PostId = c.ParentPostId,
                 LikeCount = c.CommentLikes.Count(),
-                Author = new DTOs.User.UserResponseDto
+                Author = new DTOs.User.UserPublicDto
                 {
                     Id = c.Author.Id,
                     Username = c.Author.Username,
-                    Email = c.Author.Email,
                     Bio = c.Author.Bio,
                     ProfileImageUrl = c.Author.ProfileImageUrl
                 }

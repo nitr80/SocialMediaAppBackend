@@ -73,7 +73,7 @@ public class PostsControllerTests
             {
                 Id = 1,
                 Content = "hello",
-                Author = new UserResponseDto { Id = 42, Username = "alice", Email = "alice@example.com" }
+                Author = new UserPublicDto { Id = 42, Username = "alice" }
             }
         };
 

@@ -24,7 +24,7 @@ public static class CommentMappings
             CreatedAt = comment.CreatedAt,
             LikeCount = comment.CommentLikes.Count(),
             PostId = comment.ParentPostId,
-            Author = UserMappings.ToResponseDto(comment.Author)
+            Author = UserMappings.ToPublicDto(comment.Author)
         };
     }
 }
