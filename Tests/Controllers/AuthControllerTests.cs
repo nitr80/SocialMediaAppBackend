@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -114,6 +115,66 @@ public class AuthControllerTests
 
         var objectResult = Assert.IsAssignableFrom<ObjectResult>(result.Result);
         AssertMessageResult(objectResult, StatusCodes.Status409Conflict, "User with this email or username already exists");
+    }
+
+    [Fact]
+    public void RegisterDto_WithValidPassword_PassesValidation()
+    {
+        var dto = new RegisterDto
+        {
+            Username = "alice",
+            Email = "alice@example.com",
+            Password = "ValidPassword1!"
+        };
+
+        var errors = ValidateModel(dto);
+
+        Assert.Empty(errors);
+    }
+
+    [Theory]
+    [InlineData("short1!", "Password must be at least 8 characters long")]
+    [InlineData("nouppercase1!", "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")]
+    [InlineData("NOLOWERCASE1!", "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")]
+    [InlineData("NoDigitsHere!", "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")]
+    [InlineData("NoSpecialCharacter1", "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character")]
+    public void RegisterDto_WithInvalidPassword_FailsValidationWithExpectedMessage(string password, string expectedError)
+    {
+        var dto = new RegisterDto
+        {
+            Username = "alice",
+            Email = "alice@example.com",
+            Password = password
+        };
+
+        var errors = ValidateModel(dto);
+
+        Assert.NotEmpty(errors);
+        Assert.Contains(errors, e => e.ErrorMessage == expectedError);
+    }
+
+    [Fact]
+    public void RegisterDto_WhenPasswordExceeds72Characters_FailsValidation()
+    {
+        var dto = new RegisterDto
+        {
+            Username = "alice",
+            Email = "alice@example.com",
+            Password = new string('A', 70) + "a1!" // length 73
+        };
+
+        var errors = ValidateModel(dto);
+
+        Assert.NotEmpty(errors);
+        Assert.Contains(errors, e => e.ErrorMessage == "Password cannot exceed 72 characters");
+    }
+
+    private static IList<ValidationResult> ValidateModel(object model)
+    {
+        var validationResults = new List<ValidationResult>();
+        var ctx = new ValidationContext(model, null, null);
+        Validator.TryValidateObject(model, ctx, validationResults, true);
+        return validationResults;
     }
 
     // ---------- Refresh ----------
