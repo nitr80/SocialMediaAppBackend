@@ -38,9 +38,35 @@ public class UsersServiceTests
         };
     }
 
-    private static IFormFile CreateFormFile(string fileName, int sizeInBytes = 16)
+    private static IFormFile CreateFormFile(string fileName, int sizeInBytes = 16, byte[]? customBytes = null)
     {
-        var bytes = new byte[sizeInBytes];
+        byte[] bytes;
+        if (customBytes != null)
+        {
+            bytes = customBytes;
+        }
+        else
+        {
+            bytes = new byte[sizeInBytes];
+            string ext = Path.GetExtension(fileName).ToLowerInvariant();
+            if (sizeInBytes >= 8 && ext == ".png")
+            {
+                byte[] pngHeader = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+                Array.Copy(pngHeader, bytes, pngHeader.Length);
+            }
+            else if (sizeInBytes >= 3 && (ext == ".jpg" || ext == ".jpeg"))
+            {
+                bytes[0] = 0xFF;
+                bytes[1] = 0xD8;
+                bytes[2] = 0xFF;
+            }
+            else if (sizeInBytes >= 12 && ext == ".webp")
+            {
+                bytes[0] = 0x52; bytes[1] = 0x49; bytes[2] = 0x46; bytes[3] = 0x46;
+                bytes[8] = 0x57; bytes[9] = 0x45; bytes[10] = 0x42; bytes[11] = 0x50;
+            }
+        }
+
         var stream = new MemoryStream(bytes);
         return new FormFile(stream, 0, bytes.Length, "image", fileName)
         {
@@ -146,6 +172,71 @@ public class UsersServiceTests
         Assert.True(File.Exists(savedPath));
 
         File.Delete(savedPath);
+    }
+
+    [Fact]
+    public async Task AddOrUpdateProfilePicture_WithInvalidMagicBytes_ReturnsValidationError()
+    {
+        using var db = CreateDbContext();
+        var user = CreateUser("alice");
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var service = new UsersService(db);
+        // Create a file with .png extension but with random non-PNG bytes
+        var fakePng = CreateFormFile("avatar.png", customBytes: new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A });
+
+        var result = await service.AddOrUpdateProfilePicture(fakePng, user.Id);
+
+        Assert.False(result.Success);
+        Assert.Equal(ErrorKind.Validation, result.Kind);
+        Assert.Equal("The file content does not match a valid image format", result.Error);
+    }
+
+    [Fact]
+    public async Task AddOrUpdateProfilePicture_WithValidJpegImage_StoresImageAndUpdatesUrl()
+    {
+        using var db = CreateDbContext();
+        var user = CreateUser("alice");
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var profilesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "profiles");
+        Directory.CreateDirectory(profilesFolder);
+
+        var service = new UsersService(db);
+        var image = CreateFormFile("avatar.jpg");
+
+        var result = await service.AddOrUpdateProfilePicture(image, user.Id);
+
+        Assert.True(result.Success);
+        Assert.EndsWith(".jpg", result.Data);
+
+        var savedPath = Path.Combine(profilesFolder, Path.GetFileName(result.Data!));
+        if (File.Exists(savedPath)) File.Delete(savedPath);
+    }
+
+    [Fact]
+    public async Task AddOrUpdateProfilePicture_WithValidWebpImage_StoresImageAndUpdatesUrl()
+    {
+        using var db = CreateDbContext();
+        var user = CreateUser("alice");
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var profilesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "profiles");
+        Directory.CreateDirectory(profilesFolder);
+
+        var service = new UsersService(db);
+        var image = CreateFormFile("avatar.webp");
+
+        var result = await service.AddOrUpdateProfilePicture(image, user.Id);
+
+        Assert.True(result.Success);
+        Assert.EndsWith(".webp", result.Data);
+
+        var savedPath = Path.Combine(profilesFolder, Path.GetFileName(result.Data!));
+        if (File.Exists(savedPath)) File.Delete(savedPath);
     }
 
     [Theory]
