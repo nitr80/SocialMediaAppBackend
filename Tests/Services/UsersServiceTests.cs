@@ -2,10 +2,12 @@ using Microsoft.Data.Sqlite;
 using System;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using SocialMediaAppBackend.Data;
 using SocialMediaAppBackend.Models;
 using SocialMediaAppBackend.Results;
 using SocialMediaAppBackend.Services;
+using SocialMediaAppBackend.Services.Interfaces;
 using Xunit;
 
 namespace SocialMediaAppBackend.Tests.Services;
@@ -26,6 +28,11 @@ public class UsersServiceTests
         var context = new AppDbContext(options);
         context.Database.EnsureCreated();
         return context;
+    }
+
+    private static UsersService CreateService(AppDbContext db, IBlobStorageService? blobStorage = null)
+    {
+        return new UsersService(db, blobStorage ?? new Mock<IBlobStorageService>().Object);
     }
 
     private static User CreateUser(string username = "alice")
@@ -85,7 +92,7 @@ public class UsersServiceTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var service = new UsersService(db);
+        var service = CreateService(db);
 
         var result = await service.GetUserById(user.Id);
 
@@ -98,7 +105,7 @@ public class UsersServiceTests
     public async Task GetUserById_WhenUserMissing_ReturnsNotFound()
     {
         using var db = CreateDbContext();
-        var service = new UsersService(db);
+        var service = CreateService(db);
 
         var result = await service.GetUserById(999);
 
@@ -116,7 +123,7 @@ public class UsersServiceTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var service = new UsersService(db);
+        var service = CreateService(db);
 
         var result = await service.AddOrUpdateBio("Hello there", user.Id);
 
@@ -130,7 +137,7 @@ public class UsersServiceTests
     public async Task AddOrUpdateBio_WhenUserMissing_ReturnsNotFound()
     {
         using var db = CreateDbContext();
-        var service = new UsersService(db);
+        var service = CreateService(db);
 
         var result = await service.AddOrUpdateBio("Hello", 999);
 
@@ -148,30 +155,49 @@ public class UsersServiceTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        // The service writes into wwwroot/images/profiles, which normally exists in the app.
-        var profilesFolder = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "wwwroot",
-            "images",
-            "profiles");
-        Directory.CreateDirectory(profilesFolder);
+        var mockBlobStorage = new Mock<IBlobStorageService>();
+        mockBlobStorage
+            .Setup(b => b.UploadAsync(It.IsAny<Stream>(), "avatar.png", "image/png", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://pub-xxx.r2.dev/profiles/avatar-uuid.png");
 
-        var service = new UsersService(db);
+        var service = CreateService(db, mockBlobStorage.Object);
         var image = CreateFormFile("avatar.png");
 
         var result = await service.AddOrUpdateProfilePicture(image, user.Id);
 
         Assert.True(result.Success);
+        Assert.Equal("https://pub-xxx.r2.dev/profiles/avatar-uuid.png", result.Data);
 
         var stored = await db.Users.SingleAsync();
-        Assert.False(string.IsNullOrWhiteSpace(stored.ProfileImageUrl));
-        Assert.StartsWith("/images/profiles/", stored.ProfileImageUrl);
-        Assert.EndsWith(".png", stored.ProfileImageUrl);
+        Assert.Equal("https://pub-xxx.r2.dev/profiles/avatar-uuid.png", stored.ProfileImageUrl);
+        mockBlobStorage.Verify(b => b.UploadAsync(It.IsAny<Stream>(), "avatar.png", "image/png", It.IsAny<CancellationToken>()), Times.Once);
+    }
 
-        var savedPath = Path.Combine(profilesFolder, Path.GetFileName(stored.ProfileImageUrl!));
-        Assert.True(File.Exists(savedPath));
+    [Fact]
+    public async Task AddOrUpdateProfilePicture_WhenUserHasOldAvatar_DeletesOldAvatar()
+    {
+        using var db = CreateDbContext();
+        var user = CreateUser("alice");
+        user.ProfileImageUrl = "https://pub-xxx.r2.dev/profiles/old-avatar.png";
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
 
-        File.Delete(savedPath);
+        var mockBlobStorage = new Mock<IBlobStorageService>();
+        mockBlobStorage
+            .Setup(b => b.UploadAsync(It.IsAny<Stream>(), "avatar.png", "image/png", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://pub-xxx.r2.dev/profiles/new-avatar.png");
+
+        var service = CreateService(db, mockBlobStorage.Object);
+        var image = CreateFormFile("avatar.png");
+
+        var result = await service.AddOrUpdateProfilePicture(image, user.Id);
+
+        Assert.True(result.Success);
+        Assert.Equal("https://pub-xxx.r2.dev/profiles/new-avatar.png", result.Data);
+
+        var stored = await db.Users.SingleAsync();
+        Assert.Equal("https://pub-xxx.r2.dev/profiles/new-avatar.png", stored.ProfileImageUrl);
+        mockBlobStorage.Verify(b => b.DeleteAsync("https://pub-xxx.r2.dev/profiles/old-avatar.png", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -182,7 +208,7 @@ public class UsersServiceTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var service = new UsersService(db);
+        var service = CreateService(db);
         // Create a file with .png extension but with random non-PNG bytes
         var fakePng = CreateFormFile("avatar.png", customBytes: new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A });
 
@@ -201,19 +227,18 @@ public class UsersServiceTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var profilesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "profiles");
-        Directory.CreateDirectory(profilesFolder);
+        var mockBlobStorage = new Mock<IBlobStorageService>();
+        mockBlobStorage
+            .Setup(b => b.UploadAsync(It.IsAny<Stream>(), "avatar.jpg", "image/png", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://pub-xxx.r2.dev/profiles/avatar.jpg");
 
-        var service = new UsersService(db);
+        var service = CreateService(db, mockBlobStorage.Object);
         var image = CreateFormFile("avatar.jpg");
 
         var result = await service.AddOrUpdateProfilePicture(image, user.Id);
 
         Assert.True(result.Success);
-        Assert.EndsWith(".jpg", result.Data);
-
-        var savedPath = Path.Combine(profilesFolder, Path.GetFileName(result.Data!));
-        if (File.Exists(savedPath)) File.Delete(savedPath);
+        Assert.Equal("https://pub-xxx.r2.dev/profiles/avatar.jpg", result.Data);
     }
 
     [Fact]
@@ -224,19 +249,18 @@ public class UsersServiceTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var profilesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "profiles");
-        Directory.CreateDirectory(profilesFolder);
+        var mockBlobStorage = new Mock<IBlobStorageService>();
+        mockBlobStorage
+            .Setup(b => b.UploadAsync(It.IsAny<Stream>(), "avatar.webp", "image/png", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://pub-xxx.r2.dev/profiles/avatar.webp");
 
-        var service = new UsersService(db);
+        var service = CreateService(db, mockBlobStorage.Object);
         var image = CreateFormFile("avatar.webp");
 
         var result = await service.AddOrUpdateProfilePicture(image, user.Id);
 
         Assert.True(result.Success);
-        Assert.EndsWith(".webp", result.Data);
-
-        var savedPath = Path.Combine(profilesFolder, Path.GetFileName(result.Data!));
-        if (File.Exists(savedPath)) File.Delete(savedPath);
+        Assert.Equal("https://pub-xxx.r2.dev/profiles/avatar.webp", result.Data);
     }
 
     [Theory]
@@ -250,7 +274,7 @@ public class UsersServiceTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var service = new UsersService(db);
+        var service = CreateService(db);
 
         var result = await service.AddOrUpdateProfilePicture(CreateFormFile(fileName), user.Id);
 
@@ -266,7 +290,7 @@ public class UsersServiceTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var service = new UsersService(db);
+        var service = CreateService(db);
         var tooLarge = CreateFormFile("avatar.png", sizeInBytes: 5 * 1024 * 1024 + 1);
 
         var result = await service.AddOrUpdateProfilePicture(tooLarge, user.Id);
@@ -283,7 +307,7 @@ public class UsersServiceTests
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var service = new UsersService(db);
+        var service = CreateService(db);
         var empty = CreateFormFile("avatar.png", sizeInBytes: 0);
 
         var result = await service.AddOrUpdateProfilePicture(empty, user.Id);
@@ -296,7 +320,7 @@ public class UsersServiceTests
     public async Task AddOrUpdateProfilePicture_WhenUserMissing_ReturnsNotFound()
     {
         using var db = CreateDbContext();
-        var service = new UsersService(db);
+        var service = CreateService(db);
 
         var result = await service.AddOrUpdateProfilePicture(CreateFormFile("avatar.png"), 999);
 
@@ -317,7 +341,7 @@ public class UsersServiceTests
         db.Users.Add(currentUser);
         await db.SaveChangesAsync();
 
-        var service = new UsersService(db);
+        var service = CreateService(db);
 
         var result = await service.SearchUsername("ali", currentUser.Id);
 
@@ -335,7 +359,7 @@ public class UsersServiceTests
         db.Users.Add(currentUser);
         await db.SaveChangesAsync();
 
-        var service = new UsersService(db);
+        var service = CreateService(db);
 
         var result = await service.SearchUsername(null, currentUser.Id);
 
@@ -353,7 +377,7 @@ public class UsersServiceTests
         db.Users.Add(currentUser);
         await db.SaveChangesAsync();
 
-        var service = new UsersService(db);
+        var service = CreateService(db);
 
         var result = await service.SearchUsername("charlie", currentUser.Id);
 

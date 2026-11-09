@@ -11,10 +11,12 @@ namespace SocialMediaAppBackend.Services;
 public class UsersService : IUsersService
 {
     private readonly AppDbContext _appDbContext;
+    private readonly IBlobStorageService _blobStorageService;
 
-    public UsersService(AppDbContext appDbContext)
+    public UsersService(AppDbContext appDbContext, IBlobStorageService blobStorageService)
     {
         _appDbContext = appDbContext;
+        _blobStorageService = blobStorageService;
     }
 
     public async Task<Result<User>> GetUserById(int id)
@@ -113,44 +115,39 @@ public class UsersService : IUsersService
             return Result<string>.Fail("User not found", ErrorKind.NotFound);
         }
 
-        string fileName = $"{Guid.NewGuid()}{extension}";
+        await using Stream fileStream = image.OpenReadStream();
+        string? oldProfileUrl = user.ProfileImageUrl;
 
-        string folder = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "wwwroot",
-            "images",
-            "profiles");
+        string newUrl = await _blobStorageService.UploadAsync(
+            fileStream,
+            image.FileName,
+            image.ContentType);
 
-        Directory.CreateDirectory(folder);
+        user.ProfileImageUrl = newUrl;
+        await _appDbContext.SaveChangesAsync();
 
-        string filePath = Path.Combine(folder, fileName);
-
-        using (FileStream stream = new FileStream(filePath, FileMode.Create))
+        if (!string.IsNullOrWhiteSpace(oldProfileUrl))
         {
-            await image.CopyToAsync(stream);
-        }
-
-        if (!string.IsNullOrWhiteSpace(user.ProfileImageUrl) &&
-            user.ProfileImageUrl.StartsWith("/images/profiles/"))
-        {
-            string oldFileName = Path.GetFileName(user.ProfileImageUrl);
-            string oldFilePath = Path.Combine(folder, oldFileName);
-
-            try
+            if (oldProfileUrl.StartsWith("/images/profiles/"))
             {
-                if (File.Exists(oldFilePath))
+                try
                 {
-                    File.Delete(oldFilePath);
+                    string oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldProfileUrl.TrimStart('/'));
+                    if (File.Exists(oldFilePath))
+                    {
+                        File.Delete(oldFilePath);
+                    }
+                }
+                catch
+                {
+                    // Deletion failures should not block the profile picture update
                 }
             }
-            catch
+            else
             {
-                // Deletion failures should not block the profile picture update
+                _ = _blobStorageService.DeleteAsync(oldProfileUrl);
             }
         }
-
-        user.ProfileImageUrl = $"/images/profiles/{fileName}";
-        await _appDbContext.SaveChangesAsync();
 
         return Result<string>.Ok(user.ProfileImageUrl);
     }

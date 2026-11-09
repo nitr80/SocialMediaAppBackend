@@ -1,11 +1,13 @@
 using System.Text;
 using System.Threading.RateLimiting;
+using Amazon.S3;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SocialMediaAppBackend.Data;
@@ -83,6 +85,40 @@ builder.Services.AddScoped<ILikesService, LikesService>();
 builder.Services.AddScoped<ICommentsService, CommentsService>();
 builder.Services.AddScoped<ICommentLikesService, CommentLikesService>();
 builder.Services.AddScoped<IFollowsService, FollowsService>();
+builder.Services.AddScoped<IBlobStorageService, CloudflareR2BlobStorageService>();
+
+// S3 / Blob Client
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<BlobStorageOptions>>().Value;
+    var config = new AmazonS3Config
+    {
+        ForcePathStyle = options.ForcePathStyle
+    };
+
+    if (!string.IsNullOrWhiteSpace(options.ServiceUrl))
+    {
+        config.ServiceURL = options.ServiceUrl;
+    }
+
+    if (!string.IsNullOrWhiteSpace(options.Region))
+    {
+        config.AuthenticationRegion = options.Region;
+    }
+
+    if (string.IsNullOrWhiteSpace(options.ServiceUrl) && !string.IsNullOrWhiteSpace(options.Region))
+    {
+        config.RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(options.Region);
+    }
+
+    if (!string.IsNullOrWhiteSpace(options.AccessKey) && !string.IsNullOrWhiteSpace(options.SecretKey))
+    {
+        var credentials = new Amazon.Runtime.BasicAWSCredentials(options.AccessKey, options.SecretKey);
+        return new AmazonS3Client(credentials, config);
+    }
+
+    return new AmazonS3Client(config);
+});
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -92,6 +128,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Options
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
+builder.Services.Configure<BlobStorageOptions>(builder.Configuration.GetSection(BlobStorageOptions.SectionName));
 
 // Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

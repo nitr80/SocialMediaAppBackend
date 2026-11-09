@@ -18,9 +18,7 @@ WORKDIR /app
 
 COPY --from=build /app/publish .
 
-RUN chmod -R a+rX /app \
-    && mkdir -p /app/wwwroot/images/profiles \
-    && chown -R $APP_UID:$APP_UID /app/wwwroot/images/profiles
+RUN chmod -R a+rX /app
 
 USER $APP_UID
 

@@ -61,8 +61,12 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       JwtOptions__Key: ${JWT_SECRET}
       ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD}
-    volumes:
-      - api-uploads:/app/wwwroot/images/profiles
+      BlobStorage__BucketName: ${BLOB_BUCKET_NAME}
+      BlobStorage__Region: ${BLOB_REGION:-auto}
+      BlobStorage__AccessKey: ${BLOB_ACCESS_KEY}
+      BlobStorage__SecretKey: ${BLOB_SECRET_KEY}
+      BlobStorage__ServiceUrl: ${BLOB_SERVICE_URL:-}
+      BlobStorage__PublicBaseUrl: ${BLOB_PUBLIC_URL:-}
     networks:
       - app-network
 
@@ -80,7 +84,6 @@ services:
 
 volumes:
   postgres-data:
-  api-uploads:
   caddy-data:
   caddy-config:
 
