@@ -20,6 +20,7 @@ namespace SocialMediaAppBackend.Migrations
                 .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("SocialMediaAppBackend.Models.Comment", b =>
@@ -230,6 +231,11 @@ namespace SocialMediaAppBackend.Migrations
 
                     b.HasIndex("Username")
                         .IsUnique();
+
+                    b.HasIndex(new[] { "Username" }, "IX_Users_Username_Trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Username" }, "IX_Users_Username_Trgm"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex(new[] { "Username" }, "IX_Users_Username_Trgm"), new[] { "gin_trgm_ops" });
 
                     b.ToTable("Users");
                 });

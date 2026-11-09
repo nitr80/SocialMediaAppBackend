@@ -161,9 +161,16 @@ public class UsersService : IUsersService
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(u => u.Username.ToLower().Contains(search.ToLower()) && u.Id != currentUserId)
-                         .OrderBy(u => u.Username)
-                         .Take(10);
+            if (_appDbContext.Database.IsNpgsql())
+            {
+                query = query.Where(u => EF.Functions.ILike(u.Username, $"%{search}%") && u.Id != currentUserId);
+            }
+            else
+            {
+                query = query.Where(u => u.Username.ToLower().Contains(search.ToLower()) && u.Id != currentUserId);
+            }
+
+            query = query.OrderBy(u => u.Username).Take(10);
         }
         else
         {
