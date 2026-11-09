@@ -155,8 +155,7 @@ namespace SocialMediaAppBackend.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.HasIndex("Id", "CreatedAt")
-                        .IsUnique();
+                    b.HasIndex("CreatedAt", "Id");
 
                     b.ToTable("Posts");
                 });

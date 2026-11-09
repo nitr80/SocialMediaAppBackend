@@ -32,6 +32,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Follow>().HasIndex(f => new { f.FollowerId, f.FollowedUserId }).IsUnique();
 
-        modelBuilder.Entity<Post>().HasIndex(p => new { p.Id, p.CreatedAt }).IsUnique();
+        modelBuilder.Entity<Post>().HasIndex(p => new { p.CreatedAt, p.Id });
     }
 }
