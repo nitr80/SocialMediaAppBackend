@@ -27,9 +27,9 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 
 var jwtOptions = builder.Configuration.GetSection("JwtOptions");
 
-string jwtKey = jwtOptions["Key"] ?? string.Empty;
-string jwtIssuer = jwtOptions["Issuer"] ?? string.Empty;
-string jwtAudience = jwtOptions["Audience"] ?? string.Empty;
+string jwtKey = jwtOptions["Key"] ?? (args.Contains("--migrate") ? "placeholder-key-for-migrations-only-32bytes" : string.Empty);
+string jwtIssuer = jwtOptions["Issuer"] ?? (args.Contains("--migrate") ? "migration" : string.Empty);
+string jwtAudience = jwtOptions["Audience"] ?? (args.Contains("--migrate") ? "migration" : string.Empty);
 
 if (string.IsNullOrWhiteSpace(jwtKey) || string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtAudience))
 {
@@ -267,13 +267,21 @@ app.UseCors("AllowFrontend");
 
 app.UseRateLimiter();
 
-using (var scope = app.Services.CreateScope())
+// Run migrations only when explicitly commanded
+if (args.Contains("--migrate") || builder.Configuration.GetValue<bool>("MIGRATIONS_RUN_ON_STARTUP", false))
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 
-    // Refresh tokens are stored as SHA-256 hashes (64 hex chars).
+    // Routine maintenance: prune malformed/expired refresh tokens
     db.RefreshTokens.Where(rt => rt.Token.Length != 64).ExecuteDelete();
+
+    if (args.Contains("--migrate"))
+    {
+        // Exit process immediately with code 0 once migrations are applied
+        return;
+    }
 }
 
 app.UseMiddleware<ExceptionMiddleware>();

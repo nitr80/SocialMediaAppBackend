@@ -43,17 +43,36 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d socialmediaapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  migration:
+    build: .
+    image: nitr80/socialmediaappbackend-api:latest
+    command: ["dotnet", "SocialMediaAppBackend.dll", "--migrate"]
+    restart: "no" # Runs once on deploy and terminates
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD}
     networks:
       - app-network
 
   api:
     build: .
     image: nitr80/socialmediaappbackend-api:latest
-    # image: nitr80/socialmediaappbackend-api:1.0.0
+    restart: unless-stopped
     depends_on:
-      - db
-    # ports:
-    #   - "8080:8080"
+      db:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
     expose:
       - "8080"
     environment:
@@ -72,6 +91,7 @@ services:
 
   caddy:
     image: caddy:2
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -79,6 +99,8 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy-data:/data
       - caddy-config:/config
+    depends_on:
+      - api
     networks:
       - app-network
 
