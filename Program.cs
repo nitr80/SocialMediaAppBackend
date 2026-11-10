@@ -16,6 +16,7 @@ using SocialMediaAppBackend.Data;
 using SocialMediaAppBackend.Middleware;
 using SocialMediaAppBackend.Options;
 using SocialMediaAppBackend.Services;
+using SocialMediaAppBackend.Services.BackgroundServices;
 using SocialMediaAppBackend.Services.HealthChecks;
 using SocialMediaAppBackend.Services.Interfaces;
 
@@ -91,6 +92,8 @@ builder.Services.AddScoped<ICommentsService, CommentsService>();
 builder.Services.AddScoped<ICommentLikesService, CommentLikesService>();
 builder.Services.AddScoped<IFollowsService, FollowsService>();
 builder.Services.AddScoped<IBlobStorageService, CloudflareR2BlobStorageService>();
+builder.Services.AddScoped<IRefreshTokenCleanupService, RefreshTokenCleanupService>();
+builder.Services.AddHostedService<ExpiredRefreshTokenCleanupService>();
 
 // S3 / Blob Client
 builder.Services.AddSingleton<IAmazonS3>(sp =>
