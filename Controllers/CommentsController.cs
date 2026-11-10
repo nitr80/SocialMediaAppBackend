@@ -22,10 +22,10 @@ public class CommentsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<CommentResponseDto>> CreateNested(int postId, CommentRequestDto commentRequestDto)
+    public async Task<ActionResult<CommentResponseDto>> CreateNested(int postId, CommentRequestDto commentRequestDto, CancellationToken cancellationToken = default)
     {
         Comment comment = CommentMappings.ToComment(commentRequestDto, postId, User.GetUserId());
-        Result<Comment> result = await _commentsService.CreateComment(comment);
+        Result<Comment> result = await _commentsService.CreateComment(comment, cancellationToken);
 
         if (!result.Success)
         {
@@ -40,9 +40,9 @@ public class CommentsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<CommentResponseDto>>> GetAllByPostIdNested(int postId)
+    public async Task<ActionResult<List<CommentResponseDto>>> GetAllByPostIdNested(int postId, CancellationToken cancellationToken = default)
     {
-        Result<List<CommentResponseDto>> result = await _commentsService.GetCommentsByPostId(postId);
+        Result<List<CommentResponseDto>> result = await _commentsService.GetCommentsByPostId(postId, cancellationToken);
 
         if (!result.Success)
         {

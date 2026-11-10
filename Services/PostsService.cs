@@ -21,23 +21,23 @@ public class PostsService : IPostsService
         _appDbContext = appDbContext;
     }
 
-    public async Task<Result<Post>> CreatePost(Post post)
+    public async Task<Result<Post>> CreatePost(Post post, CancellationToken cancellationToken = default)
     {
-        await _appDbContext.Posts.AddAsync(post);
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.Posts.AddAsync(post, cancellationToken);
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         Post createdPost = await _appDbContext.Posts
             .Include(p => p.Author)
             .Include(p => p.Likes)
             .Include(p => p.Comments)
-            .FirstAsync(p => p.Id == post.Id);
+            .FirstAsync(p => p.Id == post.Id, cancellationToken);
 
         return Result<Post>.Ok(createdPost);
     }
 
-    public async Task<Result<bool>> DeletePostById(int postId, int userId)
+    public async Task<Result<bool>> DeletePostById(int postId, int userId, CancellationToken cancellationToken = default)
     {
-        bool postExists = await _appDbContext.Posts.AnyAsync(p => p.Id == postId);
+        bool postExists = await _appDbContext.Posts.AnyAsync(p => p.Id == postId, cancellationToken);
 
         if (!postExists)
         {
@@ -46,7 +46,7 @@ public class PostsService : IPostsService
 
         int affected = await _appDbContext.Posts
             .Where(p => p.Id == postId && p.AuthorId == userId)
-            .ExecuteDeleteAsync();
+            .ExecuteDeleteAsync(cancellationToken);
 
         if (affected == 0)
         {
@@ -59,7 +59,8 @@ public class PostsService : IPostsService
     public async Task<Result<PagedList<PostResponseDto>>> GetAllPosts(
         int currentUserId,
         int? limit,
-        string? cursor)
+        string? cursor,
+        CancellationToken cancellationToken = default)
     {
         limit ??= 15;
 
@@ -116,7 +117,7 @@ public class PostsService : IPostsService
                 }
             })
             .Take(limit.Value + 1)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         bool hasMore = postList.Count > limit.Value;
 
@@ -140,13 +141,13 @@ public class PostsService : IPostsService
         return Result<PagedList<PostResponseDto>>.Ok(pagedList);
     }
 
-    public async Task<Result<Post>> GetPostById(int postId, int currentUserId)
+    public async Task<Result<Post>> GetPostById(int postId, int currentUserId, CancellationToken cancellationToken = default)
     {
         Post? post = await _appDbContext.Posts
             .Include(p => p.Author)
             .Include(p => p.Likes)
             .Include(p => p.Comments)
-            .FirstOrDefaultAsync(p => p.Id == postId);
+            .FirstOrDefaultAsync(p => p.Id == postId, cancellationToken);
 
         if (post == null)
         {
@@ -154,7 +155,7 @@ public class PostsService : IPostsService
         }
 
         bool isFollowing = await _appDbContext.Follows
-            .AnyAsync(f => f.FollowerId == currentUserId && f.FollowedUserId == post.AuthorId);
+            .AnyAsync(f => f.FollowerId == currentUserId && f.FollowedUserId == post.AuthorId, cancellationToken);
 
         if (!isFollowing && post.AuthorId != currentUserId)
         {

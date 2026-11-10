@@ -61,7 +61,7 @@ public class UsersControllerTests
     public async Task GetById_WhenViewingOwnProfile_ReturnsOkWithUserResponseDto()
     {
         _usersService
-            .Setup(s => s.GetUserById(1))
+            .Setup(s => s.GetUserById(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<User>.Ok(SampleUser()));
 
         var controller = new UsersController(_usersService.Object)
@@ -82,7 +82,7 @@ public class UsersControllerTests
     public async Task GetById_WhenViewingOtherUserProfile_ReturnsOkWithUserPublicDto()
     {
         _usersService
-            .Setup(s => s.GetUserById(1))
+            .Setup(s => s.GetUserById(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<User>.Ok(SampleUser()));
 
         var controller = new UsersController(_usersService.Object)
@@ -102,7 +102,7 @@ public class UsersControllerTests
     public async Task GetById_WhenUserMissing_ReturnsNotFoundWithMessage()
     {
         _usersService
-            .Setup(s => s.GetUserById(999))
+            .Setup(s => s.GetUserById(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<User>.Fail("User not found", ErrorKind.NotFound));
 
         var controller = new UsersController(_usersService.Object)
@@ -122,7 +122,7 @@ public class UsersControllerTests
     public async Task AddOrUpdateBio_WhenServiceSucceeds_ReturnsOkWithData()
     {
         _usersService
-            .Setup(s => s.AddOrUpdateBio("new bio", 42))
+            .Setup(s => s.AddOrUpdateBio("new bio", 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new UsersController(_usersService.Object)
@@ -140,7 +140,7 @@ public class UsersControllerTests
     public async Task AddOrUpdateBio_WhenUserMissing_ReturnsNotFoundWithMessage()
     {
         _usersService
-            .Setup(s => s.AddOrUpdateBio(It.IsAny<string>(), It.IsAny<int>()))
+            .Setup(s => s.AddOrUpdateBio(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("User not found", ErrorKind.NotFound));
 
         var controller = new UsersController(_usersService.Object)
@@ -160,7 +160,7 @@ public class UsersControllerTests
     public async Task AddOrUpdateProfilePicture_WhenServiceSucceeds_ReturnsOkWithData()
     {
         _usersService
-            .Setup(s => s.AddOrUpdateProfilePicture(It.IsAny<IFormFile>(), 42))
+            .Setup(s => s.AddOrUpdateProfilePicture(It.IsAny<IFormFile>(), 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Ok("/images/profiles/avatar.png"));
 
         var controller = new UsersController(_usersService.Object)
@@ -180,7 +180,7 @@ public class UsersControllerTests
     public async Task AddOrUpdateProfilePicture_WhenValidationFails_ReturnsBadRequestWithMessage()
     {
         _usersService
-            .Setup(s => s.AddOrUpdateProfilePicture(It.IsAny<IFormFile>(), It.IsAny<int>()))
+            .Setup(s => s.AddOrUpdateProfilePicture(It.IsAny<IFormFile>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<string>.Fail("Only jpg, jpeg, png and webp images are allowed", ErrorKind.Validation));
 
         var controller = new UsersController(_usersService.Object)
@@ -202,7 +202,7 @@ public class UsersControllerTests
     public async Task SearchUsername_WhenSearchTermProvided_ReturnsMatchingUsers()
     {
         _usersService
-            .Setup(s => s.SearchUsername("john", 42))
+            .Setup(s => s.SearchUsername("john", 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<UserPublicDto>>.Ok(new List<UserPublicDto>()));
 
         var controller = new UsersController(_usersService.Object)
@@ -219,7 +219,7 @@ public class UsersControllerTests
     public async Task SearchUsername_WhenNoSearchTermProvided_ReturnsAllUsers()
     {
         _usersService
-            .Setup(s => s.SearchUsername(null, 42))
+            .Setup(s => s.SearchUsername(null, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<UserPublicDto>>.Ok(new List<UserPublicDto>()));
 
         var controller = new UsersController(_usersService.Object)

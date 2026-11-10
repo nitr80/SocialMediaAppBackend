@@ -19,9 +19,9 @@ public class UsersService : IUsersService
         _blobStorageService = blobStorageService;
     }
 
-    public async Task<Result<User>> GetUserById(int id)
+    public async Task<Result<User>> GetUserById(int id, CancellationToken cancellationToken = default)
     {
-        User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
+        User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
         if (user == null)
         {
@@ -31,9 +31,9 @@ public class UsersService : IUsersService
         return Result<User>.Ok(user);
     }
 
-    public async Task<Result<bool>> AddOrUpdateBio(string bio, int userId)
+    public async Task<Result<bool>> AddOrUpdateBio(string bio, int userId, CancellationToken cancellationToken = default)
     {
-        User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         if (user == null)
         {
@@ -41,7 +41,7 @@ public class UsersService : IUsersService
         }
 
         user.Bio = bio;
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         return Result<bool>.Ok(true);
     }
@@ -49,13 +49,13 @@ public class UsersService : IUsersService
     private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
     private const long MaxImageSizeBytes = 5 * 1024 * 1024;
 
-    private static async Task<bool> HasValidImageSignature(IFormFile image, string extension)
+    private static async Task<bool> HasValidImageSignature(IFormFile image, string extension, CancellationToken cancellationToken = default)
     {
         try
         {
             byte[] header = new byte[12];
             await using Stream stream = image.OpenReadStream();
-            int bytesRead = await stream.ReadAsync(header.AsMemory(0, header.Length));
+            int bytesRead = await stream.ReadAsync(header.AsMemory(0, header.Length), cancellationToken);
 
             return extension switch
             {
@@ -84,7 +84,7 @@ public class UsersService : IUsersService
         }
     }
 
-    public async Task<Result<string>> AddOrUpdateProfilePicture(IFormFile image, int userId)
+    public async Task<Result<string>> AddOrUpdateProfilePicture(IFormFile image, int userId, CancellationToken cancellationToken = default)
     {
         if (image == null || image.Length == 0)
         {
@@ -103,12 +103,12 @@ public class UsersService : IUsersService
             return Result<string>.Fail("Only jpg, jpeg, png and webp images are allowed", ErrorKind.Validation);
         }
 
-        if (!await HasValidImageSignature(image, extension))
+        if (!await HasValidImageSignature(image, extension, cancellationToken))
         {
             return Result<string>.Fail("The file content does not match a valid image format", ErrorKind.Validation);
         }
 
-        User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         if (user == null)
         {
@@ -121,10 +121,11 @@ public class UsersService : IUsersService
         string newUrl = await _blobStorageService.UploadAsync(
             fileStream,
             image.FileName,
-            image.ContentType);
+            image.ContentType,
+            cancellationToken);
 
         user.ProfileImageUrl = newUrl;
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(oldProfileUrl))
         {
@@ -145,14 +146,14 @@ public class UsersService : IUsersService
             }
             else
             {
-                _ = _blobStorageService.DeleteAsync(oldProfileUrl);
+                _ = _blobStorageService.DeleteAsync(oldProfileUrl, CancellationToken.None);
             }
         }
 
         return Result<string>.Ok(user.ProfileImageUrl);
     }
 
-    public async Task<Result<List<UserPublicDto>>> SearchUsername(string? search, int currentUserId)
+    public async Task<Result<List<UserPublicDto>>> SearchUsername(string? search, int currentUserId, CancellationToken cancellationToken = default)
     {
         IQueryable<User> query = _appDbContext.Users;
 
@@ -177,7 +178,7 @@ public class UsersService : IUsersService
 
         List<UserPublicDto> users = await query
             .Select(u => UserMappings.ToPublicDto(u))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Result<List<UserPublicDto>>.Ok(users);
     }

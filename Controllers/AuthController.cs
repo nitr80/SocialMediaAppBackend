@@ -21,36 +21,36 @@ public class AuthController : ControllerBase
 
     [HttpPost("Login")]
     [EnableRateLimiting("auth")]
-    public async Task<ActionResult<AuthResponseDto>> LoginAsync(LoginDto loginDto)
+    public async Task<ActionResult<AuthResponseDto>> LoginAsync(LoginDto loginDto, CancellationToken cancellationToken = default)
     {
-        Result<AuthResponseDto> authResult = await _authService.LoginAsync(loginDto);
+        Result<AuthResponseDto> authResult = await _authService.LoginAsync(loginDto, cancellationToken);
 
         return authResult.ToActionResult(this);
     }
 
     [HttpPost("Register")]
     [EnableRateLimiting("auth")]
-    public async Task<ActionResult<AuthResponseDto>> RegisterAsync(RegisterDto registerDto)
+    public async Task<ActionResult<AuthResponseDto>> RegisterAsync(RegisterDto registerDto, CancellationToken cancellationToken = default)
     {
-        Result<AuthResponseDto> authResult = await _authService.RegisterAsync(registerDto);
+        Result<AuthResponseDto> authResult = await _authService.RegisterAsync(registerDto, cancellationToken);
 
         return authResult.ToActionResult(this);
     }
 
     [HttpPost("Refresh")]
     [EnableRateLimiting("auth")]
-    public async Task<ActionResult<AuthResponseDto>> Refresh(TokenRequestDto requestDto)
+    public async Task<ActionResult<AuthResponseDto>> Refresh(TokenRequestDto requestDto, CancellationToken cancellationToken = default)
     {
-        Result<AuthResponseDto> authResult = await _authService.Refresh(requestDto);
+        Result<AuthResponseDto> authResult = await _authService.Refresh(requestDto, cancellationToken);
 
         return authResult.ToActionResult(this);
     }
 
     [Authorize]
     [HttpPost("Logout")]
-    public async Task<ActionResult> LogoutAsync()
+    public async Task<ActionResult> LogoutAsync(CancellationToken cancellationToken = default)
     {
-        Result<bool> result = await _authService.LogoutAsync(User.GetUserId());
+        Result<bool> result = await _authService.LogoutAsync(User.GetUserId(), cancellationToken);
 
         if (!result.Success)
         {

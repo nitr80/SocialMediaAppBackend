@@ -47,7 +47,7 @@ public class CommentLikesControllerTests
     public async Task Get_ReturnsLikeStateForCurrentUser()
     {
         _commentLikesService
-            .Setup(s => s.GetLike(5, 42))
+            .Setup(s => s.GetLike(5, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new CommentLikesController(_commentLikesService.Object)
@@ -68,7 +68,7 @@ public class CommentLikesControllerTests
     {
         var ids = new List<int> { 10, 11 };
         _commentLikesService
-            .Setup(s => s.GetAllLikedCommentIdsByUserIdAndPostId(42, 7))
+            .Setup(s => s.GetAllLikedCommentIdsByUserIdAndPostId(42, 7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<int>>.Ok(ids));
 
         var controller = new CommentLikesController(_commentLikesService.Object)
@@ -88,7 +88,7 @@ public class CommentLikesControllerTests
     public async Task LikeResource_WhenServiceSucceeds_ReturnsOkWithData()
     {
         _commentLikesService
-            .Setup(s => s.LikeComment(5, 42))
+            .Setup(s => s.LikeComment(5, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new CommentLikesController(_commentLikesService.Object)
@@ -106,7 +106,7 @@ public class CommentLikesControllerTests
     public async Task LikeResource_WhenAlreadyLiked_ReturnsConflictWithMessage()
     {
         _commentLikesService
-            .Setup(s => s.LikeComment(It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(s => s.LikeComment(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("Comment already liked by the user", ErrorKind.Conflict));
 
         var controller = new CommentLikesController(_commentLikesService.Object)
@@ -126,7 +126,7 @@ public class CommentLikesControllerTests
     public async Task UnlikeResource_WhenServiceSucceeds_ReturnsNoContent()
     {
         _commentLikesService
-            .Setup(s => s.UnlikeComment(5, 42))
+            .Setup(s => s.UnlikeComment(5, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new CommentLikesController(_commentLikesService.Object)

@@ -16,27 +16,27 @@ public class CommentsService : ICommentsService
         _appDbContext = appDbContext;
     }
 
-    public async Task<Result<Comment>> CreateComment(Comment comment)
+    public async Task<Result<Comment>> CreateComment(Comment comment, CancellationToken cancellationToken = default)
     {
-        if (!await _appDbContext.Posts.AnyAsync(p => p.Id == comment.ParentPostId))
+        if (!await _appDbContext.Posts.AnyAsync(p => p.Id == comment.ParentPostId, cancellationToken))
         {
             return Result<Comment>.Fail("Post doesn't exist", ErrorKind.NotFound);
         }
 
-        await _appDbContext.Comments.AddAsync(comment);
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.Comments.AddAsync(comment, cancellationToken);
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         comment = await _appDbContext.Comments
             .Include(c => c.Author)
             .Include(c => c.CommentLikes)
-            .FirstAsync(c => c.Id == comment.Id);
+            .FirstAsync(c => c.Id == comment.Id, cancellationToken);
 
         return Result<Comment>.Ok(comment);
     }
 
-    public async Task<Result<List<CommentResponseDto>>> GetCommentsByPostId(int postId)
+    public async Task<Result<List<CommentResponseDto>>> GetCommentsByPostId(int postId, CancellationToken cancellationToken = default)
     {
-        if (!await _appDbContext.Posts.AnyAsync(p => p.Id == postId))
+        if (!await _appDbContext.Posts.AnyAsync(p => p.Id == postId, cancellationToken))
         {
             return Result<List<CommentResponseDto>>.Fail("Post doesn't exist", ErrorKind.NotFound);
         }
@@ -59,7 +59,7 @@ public class CommentsService : ICommentsService
                     ProfileImageUrl = c.Author.ProfileImageUrl
                 }
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Result<List<CommentResponseDto>>.Ok(commentList);
     }

@@ -47,7 +47,7 @@ public class LikesControllerTests
     public async Task Get_ReturnsLikeStateForCurrentUser()
     {
         _likesService
-            .Setup(s => s.GetLike(7, 42))
+            .Setup(s => s.GetLike(7, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new LikesController(_likesService.Object)
@@ -68,7 +68,7 @@ public class LikesControllerTests
     {
         var ids = new List<int> { 1, 2, 3 };
         _likesService
-            .Setup(s => s.GetAllLikedPostIdsByUserId(42))
+            .Setup(s => s.GetAllLikedPostIdsByUserId(42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<int>>.Ok(ids));
 
         var controller = new LikesController(_likesService.Object)
@@ -88,7 +88,7 @@ public class LikesControllerTests
     public async Task LikePostResource_WhenServiceSucceeds_ReturnsOkWithData()
     {
         _likesService
-            .Setup(s => s.LikePost(7, 42))
+            .Setup(s => s.LikePost(7, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new LikesController(_likesService.Object)
@@ -106,7 +106,7 @@ public class LikesControllerTests
     public async Task LikePostResource_WhenAlreadyLiked_ReturnsConflictWithMessage()
     {
         _likesService
-            .Setup(s => s.LikePost(It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(s => s.LikePost(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("Post already liked by the user", ErrorKind.Conflict));
 
         var controller = new LikesController(_likesService.Object)
@@ -126,7 +126,7 @@ public class LikesControllerTests
     public async Task UnlikePostResource_WhenServiceSucceeds_ReturnsNoContent()
     {
         _likesService
-            .Setup(s => s.UnlikePost(7, 42))
+            .Setup(s => s.UnlikePost(7, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new LikesController(_likesService.Object)

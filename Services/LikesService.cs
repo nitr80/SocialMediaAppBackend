@@ -15,27 +15,27 @@ public class LikesService : ILikesService
         _appDbContext = appDbContext;
     }
 
-    public async Task<Result<bool>> GetLike(int postId, int userId)
+    public async Task<Result<bool>> GetLike(int postId, int userId, CancellationToken cancellationToken = default)
     {
         bool liked = await _appDbContext.Likes
-            .AnyAsync(l => l.PostId == postId && l.UserId == userId);
+            .AnyAsync(l => l.PostId == postId && l.UserId == userId, cancellationToken);
 
         return Result<bool>.Ok(liked);
     }
 
-    public async Task<Result<List<int>>> GetAllLikedPostIdsByUserId(int userId)
+    public async Task<Result<List<int>>> GetAllLikedPostIdsByUserId(int userId, CancellationToken cancellationToken = default)
     {
         List<int> likedPostIdList = await _appDbContext.Likes.Where(l => l.UserId == userId)
             .Select(l => l.PostId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Result<List<int>>.Ok(likedPostIdList);
     }
 
-    public async Task<Result<bool>> LikePost(int postId, int userId)
+    public async Task<Result<bool>> LikePost(int postId, int userId, CancellationToken cancellationToken = default)
     {
         bool alreadyLiked = await _appDbContext.Likes
-            .AnyAsync(l => l.PostId == postId && l.UserId == userId);
+            .AnyAsync(l => l.PostId == postId && l.UserId == userId, cancellationToken);
 
         if (alreadyLiked)
         {
@@ -48,11 +48,11 @@ public class LikesService : ILikesService
             PostId = postId,
         };
 
-        await _appDbContext.Likes.AddAsync(like);
+        await _appDbContext.Likes.AddAsync(like, cancellationToken);
 
         try
         {
-            await _appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException)
         {
@@ -62,9 +62,9 @@ public class LikesService : ILikesService
         return Result<bool>.Ok(true);
     }
 
-    public async Task<Result<bool>> UnlikePost(int postId, int userId)
+    public async Task<Result<bool>> UnlikePost(int postId, int userId, CancellationToken cancellationToken = default)
     {
-        Like? like = await _appDbContext.Likes.FirstOrDefaultAsync(l => l.PostId == postId && l.UserId == userId);
+        Like? like = await _appDbContext.Likes.FirstOrDefaultAsync(l => l.PostId == postId && l.UserId == userId, cancellationToken);
 
         if (like == null)
         {
@@ -72,7 +72,7 @@ public class LikesService : ILikesService
         }
 
         _appDbContext.Likes.Remove(like);
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         return Result<bool>.Ok(true);
     }

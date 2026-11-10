@@ -22,9 +22,9 @@ public class UsersController : ControllerBase
 
     [Authorize]
     [HttpGet("{id}")]
-    public async Task<ActionResult> GetById(int id)
+    public async Task<ActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
-        Result<User> result = await _usersService.GetUserById(id);
+        Result<User> result = await _usersService.GetUserById(id, cancellationToken);
 
         if (!result.Success)
         {
@@ -41,27 +41,27 @@ public class UsersController : ControllerBase
 
     [Authorize]
     [HttpPatch("me/Bio")]
-    public async Task<ActionResult> AddOrUpdateBio(UserBioRequestDto userBioRequestDto)
+    public async Task<ActionResult> AddOrUpdateBio(UserBioRequestDto userBioRequestDto, CancellationToken cancellationToken = default)
     {
-        Result<bool> result = await _usersService.AddOrUpdateBio(UserMappings.ToBioString(userBioRequestDto), User.GetUserId());
+        Result<bool> result = await _usersService.AddOrUpdateBio(UserMappings.ToBioString(userBioRequestDto), User.GetUserId(), cancellationToken);
 
         return result.ToActionResult(this);
     }
 
     [Authorize]
     [HttpPatch("me/ProfilePicture")]
-    public async Task<ActionResult> AddOrUpdateProfilePicture(IFormFile image)
+    public async Task<ActionResult> AddOrUpdateProfilePicture(IFormFile image, CancellationToken cancellationToken = default)
     {
-        Result<string> result = await _usersService.AddOrUpdateProfilePicture(image, User.GetUserId());
+        Result<string> result = await _usersService.AddOrUpdateProfilePicture(image, User.GetUserId(), cancellationToken);
 
         return result.ToActionResult(this);
     }
 
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<List<UserPublicDto>>> SearchUsername([FromQuery] string? search)
+    public async Task<ActionResult<List<UserPublicDto>>> SearchUsername([FromQuery] string? search, CancellationToken cancellationToken = default)
     {
-        Result<List<UserPublicDto>> result = await _usersService.SearchUsername(search, User.GetUserId());
+        Result<List<UserPublicDto>> result = await _usersService.SearchUsername(search, User.GetUserId(), cancellationToken);
 
         return result.ToActionResult(this);
     }

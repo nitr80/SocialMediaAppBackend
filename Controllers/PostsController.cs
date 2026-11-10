@@ -24,9 +24,9 @@ public class PostsController : ControllerBase
 
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<PagedList<PostResponseDto>>> GetAll([FromQuery] int? limit, [FromQuery] string? cursor)
+    public async Task<ActionResult<PagedList<PostResponseDto>>> GetAll([FromQuery] int? limit, [FromQuery] string? cursor, CancellationToken cancellationToken = default)
     {
-        Result<PagedList<PostResponseDto>> result = await _postsService.GetAllPosts(User.GetUserId(), limit, cursor);
+        Result<PagedList<PostResponseDto>> result = await _postsService.GetAllPosts(User.GetUserId(), limit, cursor, cancellationToken);
 
         if (!result.Success)
         {
@@ -38,9 +38,9 @@ public class PostsController : ControllerBase
 
     [Authorize]
     [HttpGet("{id}")]
-    public async Task<ActionResult<PostResponseDto>> GetById(int id)
+    public async Task<ActionResult<PostResponseDto>> GetById(int id, CancellationToken cancellationToken = default)
     {
-        Result<Post> result = await _postsService.GetPostById(id, User.GetUserId());
+        Result<Post> result = await _postsService.GetPostById(id, User.GetUserId(), cancellationToken);
 
         if (!result.Success)
         {
@@ -52,11 +52,11 @@ public class PostsController : ControllerBase
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult<PostResponseDto>> Create(PostRequestDto postRequestDto)
+    public async Task<ActionResult<PostResponseDto>> Create(PostRequestDto postRequestDto, CancellationToken cancellationToken = default)
     {
         Post post = PostMappings.ToPost(postRequestDto, User.GetUserId());
 
-        Result<Post> result = await _postsService.CreatePost(post);
+        Result<Post> result = await _postsService.CreatePost(post, cancellationToken);
 
         if (!result.Success)
         {
@@ -69,9 +69,9 @@ public class PostsController : ControllerBase
 
     [Authorize]
     [HttpDelete("{id}")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
-        Result<bool> result = await _postsService.DeletePostById(id, User.GetUserId());
+        Result<bool> result = await _postsService.DeletePostById(id, User.GetUserId(), cancellationToken);
 
         return result.ToActionResult(this);
     }

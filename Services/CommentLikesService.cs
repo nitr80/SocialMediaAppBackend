@@ -14,27 +14,27 @@ public class CommentLikesService : ICommentLikesService
         _appDbContext = appDbContext;
     }
 
-    public async Task<Result<List<int>>> GetAllLikedCommentIdsByUserIdAndPostId(int userId, int postId)
+    public async Task<Result<List<int>>> GetAllLikedCommentIdsByUserIdAndPostId(int userId, int postId, CancellationToken cancellationToken = default)
     {
         List<int> likedCommentIds = await _appDbContext.CommentLikes
             .Where(cl => cl.UserId == userId && cl.Comment.ParentPostId == postId)
             .Select(cl => cl.CommentId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Result<List<int>>.Ok(likedCommentIds);
     }
 
-    public async Task<Result<bool>> GetLike(int commentId, int userId)
+    public async Task<Result<bool>> GetLike(int commentId, int userId, CancellationToken cancellationToken = default)
     {
-        bool isLiked = await _appDbContext.CommentLikes.AnyAsync(l => l.CommentId == commentId && l.UserId == userId);
+        bool isLiked = await _appDbContext.CommentLikes.AnyAsync(l => l.CommentId == commentId && l.UserId == userId, cancellationToken);
 
         return Result<bool>.Ok(isLiked);
     }
 
-    public async Task<Result<bool>> LikeComment(int commentId, int userId)
+    public async Task<Result<bool>> LikeComment(int commentId, int userId, CancellationToken cancellationToken = default)
     {
         bool alreadyLiked = await _appDbContext.CommentLikes
-            .AnyAsync(l => l.CommentId == commentId && l.UserId == userId);
+            .AnyAsync(l => l.CommentId == commentId && l.UserId == userId, cancellationToken);
 
         if (alreadyLiked)
         {
@@ -47,11 +47,11 @@ public class CommentLikesService : ICommentLikesService
             CommentId = commentId
         };
 
-        await _appDbContext.CommentLikes.AddAsync(commentLike);
+        await _appDbContext.CommentLikes.AddAsync(commentLike, cancellationToken);
 
         try
         {
-            await _appDbContext.SaveChangesAsync();
+            await _appDbContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException)
         {
@@ -61,9 +61,9 @@ public class CommentLikesService : ICommentLikesService
         return Result<bool>.Ok(true);
     }
 
-    public async Task<Result<bool>> UnlikeComment(int commentId, int userId)
+    public async Task<Result<bool>> UnlikeComment(int commentId, int userId, CancellationToken cancellationToken = default)
     {
-        CommentLike? commentLike = await _appDbContext.CommentLikes.FirstOrDefaultAsync(l => l.CommentId == commentId && l.UserId == userId);
+        CommentLike? commentLike = await _appDbContext.CommentLikes.FirstOrDefaultAsync(l => l.CommentId == commentId && l.UserId == userId, cancellationToken);
 
         if (commentLike == null)
         {
@@ -71,7 +71,7 @@ public class CommentLikesService : ICommentLikesService
         }
 
         _appDbContext.CommentLikes.Remove(commentLike);
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         return Result<bool>.Ok(true);
     }

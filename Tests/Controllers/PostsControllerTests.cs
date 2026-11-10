@@ -78,7 +78,7 @@ public class PostsControllerTests
         };
 
         _postsService
-            .Setup(s => s.GetAllPosts(42, null, null))
+            .Setup(s => s.GetAllPosts(42, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedList<PostResponseDto>>.Ok(new PagedList<PostResponseDto> { Values = posts, Cursor = null }));
 
         var controller = new PostsController(_postsService.Object)
@@ -96,7 +96,7 @@ public class PostsControllerTests
     public async Task GetAll_WhenCursorIsInvalid_ReturnsBadRequestWithMessage()
     {
         _postsService
-            .Setup(s => s.GetAllPosts(42, 10, "invalid-cursor"))
+            .Setup(s => s.GetAllPosts(42, 10, "invalid-cursor", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedList<PostResponseDto>>.Fail("Invalid cursor", ErrorKind.Validation));
 
         var controller = new PostsController(_postsService.Object)
@@ -116,7 +116,7 @@ public class PostsControllerTests
     public async Task GetById_WhenPostExists_ReturnsOkWithMappedDto()
     {
         _postsService
-            .Setup(s => s.GetPostById(1, 42))
+            .Setup(s => s.GetPostById(1, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<Post>.Ok(SamplePost()));
 
         var controller = new PostsController(_postsService.Object)
@@ -137,7 +137,7 @@ public class PostsControllerTests
     public async Task GetById_WhenPostMissing_ReturnsNotFoundWithMessage()
     {
         _postsService
-            .Setup(s => s.GetPostById(999, 42))
+            .Setup(s => s.GetPostById(999, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<Post>.Fail("Post not found", ErrorKind.NotFound));
 
         var controller = new PostsController(_postsService.Object)
@@ -155,7 +155,7 @@ public class PostsControllerTests
     public async Task GetById_WhenNotFollowing_ReturnsForbiddenWithMessage()
     {
         _postsService
-            .Setup(s => s.GetPostById(1, 42))
+            .Setup(s => s.GetPostById(1, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<Post>.Fail("Not authorized to view this post", ErrorKind.Forbidden));
 
         var controller = new PostsController(_postsService.Object)
@@ -175,7 +175,7 @@ public class PostsControllerTests
     public async Task Create_WhenServiceSucceeds_ReturnsCreatedAtAction()
     {
         _postsService
-            .Setup(s => s.CreatePost(It.IsAny<Post>()))
+            .Setup(s => s.CreatePost(It.IsAny<Post>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<Post>.Ok(SamplePost()));
 
         var controller = new PostsController(_postsService.Object)
@@ -192,7 +192,7 @@ public class PostsControllerTests
         Assert.Equal("hello world", dto.Content);
 
         // the author id came from the authenticated user's claim
-        _postsService.Verify(s => s.CreatePost(It.Is<Post>(p => p.AuthorId == 42)), Times.Once);
+        _postsService.Verify(s => s.CreatePost(It.Is<Post>(p => p.AuthorId == 42), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ---------- Delete ----------
@@ -201,7 +201,7 @@ public class PostsControllerTests
     public async Task Delete_WhenServiceSucceeds_ReturnsOkWithData()
     {
         _postsService
-            .Setup(s => s.DeletePostById(1, 42))
+            .Setup(s => s.DeletePostById(1, 42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new PostsController(_postsService.Object)
@@ -219,7 +219,7 @@ public class PostsControllerTests
     public async Task Delete_WhenNotOwner_ReturnsForbiddenWithMessage()
     {
         _postsService
-            .Setup(s => s.DeletePostById(It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(s => s.DeletePostById(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("Not authorized", ErrorKind.Forbidden));
 
         var controller = new PostsController(_postsService.Object)

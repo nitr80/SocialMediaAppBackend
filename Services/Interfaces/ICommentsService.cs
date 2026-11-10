@@ -6,6 +6,6 @@ namespace SocialMediaAppBackend.Services.Interfaces;
 
 public interface ICommentsService
 {
-    public Task<Result<Comment>> CreateComment(Comment comment);
-    public Task<Result<List<CommentResponseDto>>> GetCommentsByPostId(int postId);
+    public Task<Result<Comment>> CreateComment(Comment comment, CancellationToken cancellationToken = default);
+    public Task<Result<List<CommentResponseDto>>> GetCommentsByPostId(int postId, CancellationToken cancellationToken = default);
 }

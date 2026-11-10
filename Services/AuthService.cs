@@ -28,11 +28,11 @@ public class AuthService : IAuthService
         _jwtOptions = options.Value;
     }
 
-    public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto loginDto)
+    public async Task<Result<AuthResponseDto>> LoginAsync(LoginDto loginDto, CancellationToken cancellationToken = default)
     {
         string username = loginDto.Username.ToLower();
 
-        User? user = await _appDbContext.Users.FirstOrDefaultAsync(user => user.Username == username);
+        User? user = await _appDbContext.Users.FirstOrDefaultAsync(user => user.Username == username, cancellationToken);
         if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
         {
             return Result<AuthResponseDto>.Fail("Invalid credentials", ErrorKind.Unauthorized);
@@ -41,7 +41,7 @@ public class AuthService : IAuthService
         // Drop this user's expired tokens so the table does not grow forever
         await _appDbContext.RefreshTokens
             .Where(rt => rt.UserId == user.Id && rt.Expires < DateTime.UtcNow)
-            .ExecuteDeleteAsync();
+            .ExecuteDeleteAsync(cancellationToken);
 
         string refreshToken = GenerateRefreshToken();
 
@@ -52,8 +52,8 @@ public class AuthService : IAuthService
             Expires = DateTime.UtcNow.AddDays(7)
         };
 
-        await _appDbContext.RefreshTokens.AddAsync(refreshTokenEntity);
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.RefreshTokens.AddAsync(refreshTokenEntity, cancellationToken);
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         AuthResponseDto authResponseDto = new AuthResponseDto
         {
@@ -65,12 +65,12 @@ public class AuthService : IAuthService
         return Result<AuthResponseDto>.Ok(authResponseDto);
     }
 
-    public async Task<Result<AuthResponseDto>> RegisterAsync(RegisterDto registerDto)
+    public async Task<Result<AuthResponseDto>> RegisterAsync(RegisterDto registerDto, CancellationToken cancellationToken = default)
     {
         string email = registerDto.Email.ToLower();
         string username = registerDto.Username.ToLower();
 
-        if (await _appDbContext.Users.AnyAsync(user => user.Email == email || user.Username == username))
+        if (await _appDbContext.Users.AnyAsync(user => user.Email == email || user.Username == username, cancellationToken))
         {
             return Result<AuthResponseDto>.Fail("User with this email or username already exists", ErrorKind.Conflict);
         }
@@ -82,8 +82,8 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password)
         };
 
-        await _appDbContext.Users.AddAsync(user);
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.Users.AddAsync(user, cancellationToken);
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         string refreshToken = GenerateRefreshToken();
 
@@ -94,8 +94,8 @@ public class AuthService : IAuthService
             Expires = DateTime.UtcNow.AddDays(7)
         };
 
-        await _appDbContext.RefreshTokens.AddAsync(refreshTokenEntity);
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.RefreshTokens.AddAsync(refreshTokenEntity, cancellationToken);
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         AuthResponseDto authResponseDto = new AuthResponseDto
         {
@@ -107,13 +107,13 @@ public class AuthService : IAuthService
         return Result<AuthResponseDto>.Ok(authResponseDto);
     }
 
-    public async Task<Result<AuthResponseDto>> Refresh(TokenRequestDto request)
+    public async Task<Result<AuthResponseDto>> Refresh(TokenRequestDto request, CancellationToken cancellationToken = default)
     {
         string tokenHash = HashToken(request.RefreshToken);
 
         var storedToken = await _appDbContext.RefreshTokens
             .Include(x => x.User)
-            .FirstOrDefaultAsync(x => x.Token == tokenHash);
+            .FirstOrDefaultAsync(x => x.Token == tokenHash, cancellationToken);
 
         if (storedToken == null ||
             storedToken.IsRevoked ||
@@ -128,7 +128,7 @@ public class AuthService : IAuthService
         {
             await _appDbContext.RefreshTokens
                 .Where(rt => rt.UserId == storedToken.UserId && !rt.IsRevoked)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.IsRevoked, true));
+                .ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.IsRevoked, true), cancellationToken);
 
             return Result<AuthResponseDto>.Fail("Invalid refresh token", ErrorKind.Unauthorized);
         }
@@ -148,7 +148,7 @@ public class AuthService : IAuthService
         };
 
         _appDbContext.RefreshTokens.Add(newRefreshEntity);
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         AuthResponseDto authResponseDto = new AuthResponseDto
         {
@@ -160,23 +160,23 @@ public class AuthService : IAuthService
         return Result<AuthResponseDto>.Ok(authResponseDto);
     }
 
-    public async Task<Result<bool>> LogoutAsync(int userId)
+    public async Task<Result<bool>> LogoutAsync(int userId, CancellationToken cancellationToken = default)
     {
-        User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        User? user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         if (user == null)
         {
             return Result<bool>.Fail("User not found", ErrorKind.Unauthorized);
         }
 
-        List<RefreshToken> refreshTokenList = await _appDbContext.RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked).ToListAsync();
+        List<RefreshToken> refreshTokenList = await _appDbContext.RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked).ToListAsync(cancellationToken);
 
         foreach (RefreshToken refreshToken in refreshTokenList)
         {
             refreshToken.IsRevoked = true;
         }
 
-        await _appDbContext.SaveChangesAsync();
+        await _appDbContext.SaveChangesAsync(cancellationToken);
 
         return Result<bool>.Ok(true);
     }

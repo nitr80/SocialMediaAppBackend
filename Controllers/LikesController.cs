@@ -17,33 +17,33 @@ public class LikesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<bool>> Get(int postId)
+    public async Task<ActionResult<bool>> Get(int postId, CancellationToken cancellationToken = default)
     {
-        Result<bool> result = await _likesService.GetLike(postId, User.GetUserId());
+        Result<bool> result = await _likesService.GetLike(postId, User.GetUserId(), cancellationToken);
 
         return result.ToActionResult(this);
     }
 
     [HttpGet("/Posts/me/Likes")]
-    public async Task<ActionResult<List<int>>> GetAll()
+    public async Task<ActionResult<List<int>>> GetAll(CancellationToken cancellationToken = default)
     {
-        Result<List<int>> result = await _likesService.GetAllLikedPostIdsByUserId(User.GetUserId());
+        Result<List<int>> result = await _likesService.GetAllLikedPostIdsByUserId(User.GetUserId(), cancellationToken);
 
         return result.ToActionResult(this);
     }
 
     [HttpPost]
-    public async Task<ActionResult> LikePostResource(int postId)
+    public async Task<ActionResult> LikePostResource(int postId, CancellationToken cancellationToken = default)
     {
-        Result<bool> result = await _likesService.LikePost(postId, User.GetUserId());
+        Result<bool> result = await _likesService.LikePost(postId, User.GetUserId(), cancellationToken);
 
         return result.ToActionResult(this);
     }
 
     [HttpDelete]
-    public async Task<ActionResult> UnlikePostResource(int postId)
+    public async Task<ActionResult> UnlikePostResource(int postId, CancellationToken cancellationToken = default)
     {
-        Result<bool> result = await _likesService.UnlikePost(postId, User.GetUserId());
+        Result<bool> result = await _likesService.UnlikePost(postId, User.GetUserId(), cancellationToken);
 
         if (!result.Success)
         {

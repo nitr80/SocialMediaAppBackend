@@ -48,7 +48,7 @@ public class AuthControllerTests
     {
         var response = SampleResponse();
         _authService
-            .Setup(s => s.LoginAsync(It.IsAny<LoginDto>()))
+            .Setup(s => s.LoginAsync(It.IsAny<LoginDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AuthResponseDto>.Ok(response));
 
         var controller = new AuthController(_authService.Object);
@@ -63,7 +63,7 @@ public class AuthControllerTests
     public async Task LoginAsync_WhenServiceFails_ReturnsUnauthorizedWithMessage()
     {
         _authService
-            .Setup(s => s.LoginAsync(It.IsAny<LoginDto>()))
+            .Setup(s => s.LoginAsync(It.IsAny<LoginDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AuthResponseDto>.Fail("Invalid credentials", ErrorKind.Unauthorized));
 
         var controller = new AuthController(_authService.Object);
@@ -81,7 +81,7 @@ public class AuthControllerTests
     {
         var response = SampleResponse();
         _authService
-            .Setup(s => s.RegisterAsync(It.IsAny<RegisterDto>()))
+            .Setup(s => s.RegisterAsync(It.IsAny<RegisterDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AuthResponseDto>.Ok(response));
 
         var controller = new AuthController(_authService.Object);
@@ -101,7 +101,7 @@ public class AuthControllerTests
     public async Task RegisterAsync_WhenServiceConflicts_ReturnsConflictWithMessage()
     {
         _authService
-            .Setup(s => s.RegisterAsync(It.IsAny<RegisterDto>()))
+            .Setup(s => s.RegisterAsync(It.IsAny<RegisterDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AuthResponseDto>.Fail("User with this email or username already exists", ErrorKind.Conflict));
 
         var controller = new AuthController(_authService.Object);
@@ -184,7 +184,7 @@ public class AuthControllerTests
     {
         var response = SampleResponse();
         _authService
-            .Setup(s => s.Refresh(It.IsAny<TokenRequestDto>()))
+            .Setup(s => s.Refresh(It.IsAny<TokenRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AuthResponseDto>.Ok(response));
 
         var controller = new AuthController(_authService.Object);
@@ -199,7 +199,7 @@ public class AuthControllerTests
     public async Task Refresh_WhenServiceFails_ReturnsUnauthorizedWithMessage()
     {
         _authService
-            .Setup(s => s.Refresh(It.IsAny<TokenRequestDto>()))
+            .Setup(s => s.Refresh(It.IsAny<TokenRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AuthResponseDto>.Fail("Invalid refresh token", ErrorKind.Unauthorized));
 
         var controller = new AuthController(_authService.Object);
@@ -216,7 +216,7 @@ public class AuthControllerTests
     public async Task LogoutAsync_WhenServiceSucceeds_ReturnsNoContent()
     {
         _authService
-            .Setup(s => s.LogoutAsync(It.IsAny<int>()))
+            .Setup(s => s.LogoutAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new AuthController(_authService.Object)
@@ -233,7 +233,7 @@ public class AuthControllerTests
     public async Task LogoutAsync_WhenServiceFails_ReturnsUnauthorizedWithMessage()
     {
         _authService
-            .Setup(s => s.LogoutAsync(It.IsAny<int>()))
+            .Setup(s => s.LogoutAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("User not found", ErrorKind.Unauthorized));
 
         var controller = new AuthController(_authService.Object)

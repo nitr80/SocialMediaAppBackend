@@ -57,7 +57,7 @@ public class CommentsControllerTests
     public async Task CreateNested_WhenServiceSucceeds_ReturnsCreatedAtAction()
     {
         _commentsService
-            .Setup(s => s.CreateComment(It.IsAny<Comment>()))
+            .Setup(s => s.CreateComment(It.IsAny<Comment>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<Comment>.Ok(SampleComment()));
 
         var controller = new CommentsController(_commentsService.Object)
@@ -76,7 +76,7 @@ public class CommentsControllerTests
 
         // comment's post id and author id came from the route and the user claim
         _commentsService.Verify(
-            s => s.CreateComment(It.Is<Comment>(c => c.ParentPostId == 7 && c.AuthorId == 42)),
+            s => s.CreateComment(It.Is<Comment>(c => c.ParentPostId == 7 && c.AuthorId == 42), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -97,7 +97,7 @@ public class CommentsControllerTests
         };
 
         _commentsService
-            .Setup(s => s.GetCommentsByPostId(7))
+            .Setup(s => s.GetCommentsByPostId(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<CommentResponseDto>>.Ok(comments));
 
         var controller = new CommentsController(_commentsService.Object);

@@ -19,17 +19,17 @@ public class FollowsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> FollowUser(int userId)
+    public async Task<ActionResult> FollowUser(int userId, CancellationToken cancellationToken = default)
     {
-        Result<bool> result = await _followsService.FollowUser(userId, User.GetUserId());
+        Result<bool> result = await _followsService.FollowUser(userId, User.GetUserId(), cancellationToken);
 
         return result.ToActionResult(this);
     }
 
     [HttpDelete]
-    public async Task<ActionResult> UnfollowUser(int userId)
+    public async Task<ActionResult> UnfollowUser(int userId, CancellationToken cancellationToken = default)
     {
-        Result<bool> result = await _followsService.UnfollowUser(userId, User.GetUserId());
+        Result<bool> result = await _followsService.UnfollowUser(userId, User.GetUserId(), cancellationToken);
 
         if (!result.Success)
         {
@@ -40,9 +40,9 @@ public class FollowsController : ControllerBase
     }
 
     [HttpGet("status")]
-    public async Task<ActionResult<bool>> GetFollowingStatus(int userId)
+    public async Task<ActionResult<bool>> GetFollowingStatus(int userId, CancellationToken cancellationToken = default)
     {
-        Result<bool> result = await _followsService.GetFollowingStatus(userId, User.GetUserId());
+        Result<bool> result = await _followsService.GetFollowingStatus(userId, User.GetUserId(), cancellationToken);
 
         return result.ToActionResult(this);
     }

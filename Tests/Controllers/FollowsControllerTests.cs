@@ -45,7 +45,7 @@ public class FollowsControllerTests
     public async Task FollowUser_WhenFollowIsSuccessful_ReturnsOkResult()
     {
         _followsService
-            .Setup(s => s.FollowUser(1, 2))
+            .Setup(s => s.FollowUser(1, 2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new FollowsController(_followsService.Object)
@@ -62,7 +62,7 @@ public class FollowsControllerTests
     public async Task FollowUser_WhenUserDoesNotExist_ReturnsNotFoundResult()
     {
         _followsService
-            .Setup(s => s.FollowUser(1, 2))
+            .Setup(s => s.FollowUser(1, 2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("User not found", ErrorKind.NotFound));
 
         var controller = new FollowsController(_followsService.Object)
@@ -79,7 +79,7 @@ public class FollowsControllerTests
     public async Task FollowUser_WhenAlreadyFollowing_ReturnsConflictResult()
     {
         _followsService
-            .Setup(s => s.FollowUser(1, 2))
+            .Setup(s => s.FollowUser(1, 2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("Already following", ErrorKind.Conflict));
 
         var controller = new FollowsController(_followsService.Object)
@@ -96,7 +96,7 @@ public class FollowsControllerTests
     public async Task FollowUser_WhenSelfFollowing_ReturnsBadRequest()
     {
         _followsService
-            .Setup(s => s.FollowUser(1, 1))
+            .Setup(s => s.FollowUser(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("Users cannot follow themselves", ErrorKind.Validation));
 
         var controller = new FollowsController(_followsService.Object)
@@ -114,7 +114,7 @@ public class FollowsControllerTests
     public async Task UnfollowUser_WhenUnfollowIsSuccessful_ReturnsNoContentResult()
     {
         _followsService
-            .Setup(s => s.UnfollowUser(1, 2))
+            .Setup(s => s.UnfollowUser(1, 2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new FollowsController(_followsService.Object)
@@ -131,7 +131,7 @@ public class FollowsControllerTests
     public async Task UnfollowUser_WhenUserDoesNotExist_ReturnsNotFoundResult()
     {
         _followsService
-            .Setup(s => s.UnfollowUser(1, 2))
+            .Setup(s => s.UnfollowUser(1, 2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("User not found", ErrorKind.NotFound));
 
         var controller = new FollowsController(_followsService.Object)
@@ -148,7 +148,7 @@ public class FollowsControllerTests
     public async Task GetFollowingStatus_WhenFollowing_ReturnsOkResultWithTrue()
     {
         _followsService
-            .Setup(s => s.GetFollowingStatus(1, 2))
+            .Setup(s => s.GetFollowingStatus(1, 2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(true));
 
         var controller = new FollowsController(_followsService.Object)
@@ -166,7 +166,7 @@ public class FollowsControllerTests
     public async Task GetFollowingStatus_WhenNotFollowing_ReturnsOkResultWithFalse()
     {
         _followsService
-            .Setup(s => s.GetFollowingStatus(1, 2))
+            .Setup(s => s.GetFollowingStatus(1, 2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Ok(false));
 
         var controller = new FollowsController(_followsService.Object)
@@ -184,7 +184,7 @@ public class FollowsControllerTests
     public async Task GetFollowingStatus_WhenUserDoesNotExist_ReturnsNotFoundResult()
     {
         _followsService
-            .Setup(s => s.GetFollowingStatus(1, 2))
+            .Setup(s => s.GetFollowingStatus(1, 2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Fail("User not found", ErrorKind.NotFound));
 
         var controller = new FollowsController(_followsService.Object)
