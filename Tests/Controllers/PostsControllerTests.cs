@@ -93,6 +93,30 @@ public class PostsControllerTests
     }
 
     [Fact]
+    public async Task GetAll_PassesCancellationTokenToService()
+    {
+        using var cts = new CancellationTokenSource();
+
+        _postsService
+            .Setup(s => s.GetAllPosts(42, null, null, cts.Token))
+            .ReturnsAsync(Result<PagedList<PostResponseDto>>.Ok(new PagedList<PostResponseDto>
+            {
+                Values = new List<PostResponseDto>()
+            }));
+
+        var controller = new PostsController(_postsService.Object)
+        {
+            ControllerContext = BuildControllerContextWithUserId(42)
+        };
+
+        await controller.GetAll(null, null, cts.Token);
+
+        _postsService.Verify(
+            s => s.GetAllPosts(42, null, null, cts.Token),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task GetAll_WhenCursorIsInvalid_ReturnsBadRequestWithMessage()
     {
         _postsService
