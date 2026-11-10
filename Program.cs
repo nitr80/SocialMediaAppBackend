@@ -3,10 +3,12 @@ using System.Threading.RateLimiting;
 using Amazon.S3;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -14,6 +16,7 @@ using SocialMediaAppBackend.Data;
 using SocialMediaAppBackend.Middleware;
 using SocialMediaAppBackend.Options;
 using SocialMediaAppBackend.Services;
+using SocialMediaAppBackend.Services.HealthChecks;
 using SocialMediaAppBackend.Services.Interfaces;
 
 Env.Load();
@@ -72,7 +75,9 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 });
 builder.Services
     .AddHealthChecks()
-    .AddDbContextCheck<AppDbContext>();
+    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
+    .AddDbContextCheck<AppDbContext>("database", tags: ["ready"])
+    .AddCheck<BlobStorageHealthCheck>("blobstorage", tags: ["ready"]);
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -291,7 +296,20 @@ app.UseAuthorization();
 
 app.UseStaticFiles();
 
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live")
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
 
 app.MapControllers();
 

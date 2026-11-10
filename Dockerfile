@@ -23,6 +23,6 @@ RUN chmod -R a+rX /app
 USER $APP_UID
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl --fail http://localhost:8080/health || exit 1
+    CMD curl --fail http://localhost:8080/health/live || exit 1
 
 ENTRYPOINT ["dotnet", "SocialMediaAppBackend.dll"]

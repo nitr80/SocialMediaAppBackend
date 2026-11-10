@@ -61,7 +61,7 @@ Refresh tokens are used to obtain a new access token when the current access tok
 | Comments | `GET/POST /Posts/{postId}/Comments` |
 | Comment likes | `GET/POST/DELETE /Comments/{commentId}/Likes`, `GET /Comments/me/{postId}/Likes` |
 | Follows | `POST/DELETE /Users/{userId}/Follows`, `GET /Users/{userId}/Follows/status` |
-| Health | `GET /health` |
+| Health | `GET /health/live`, `GET /health/ready`, `GET /health` (ready alias) |
 
 All endpoints except registration, login, refresh and health require a valid access token.
 
