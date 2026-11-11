@@ -29,6 +29,8 @@ builder.AddStructuredLogging();
 
 builder.AddDistributedTracing();
 
+builder.AddObservabilityMetrics();
+
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.AddServerHeader = false;
@@ -325,6 +327,8 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready")
 });
+
+app.MapObservabilityEndpoints();
 
 app.MapControllers();
 

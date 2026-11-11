@@ -5,6 +5,13 @@ metadata:
   namespace: socialmedia
   name: socialmediaappbackend-api-ingress
 
+  annotations:
+    # /metrics must not be publicly reachable; Prometheus scrapes it internally.
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location = /metrics {
+        return 404;
+      }
+
 spec:
   ingressClassName: nginx
 

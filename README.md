@@ -21,6 +21,7 @@ A RESTful backend for a social media application, built with **ASP.NET Core** an
 - Health check endpoint
 - Structured JSON logging with correlation IDs
 - Distributed tracing with OpenTelemetry (ASP.NET Core requests and Npgsql commands)
+- Prometheus metrics at `/metrics` (request rate, error rate, p95/p99 latency)
 
 ## Tech Stack
 
@@ -64,6 +65,7 @@ Refresh tokens are used to obtain a new access token when the current access tok
 | Comment likes | `GET/POST/DELETE /Comments/{commentId}/Likes`, `GET /Comments/me/{postId}/Likes` |
 | Follows | `POST/DELETE /Users/{userId}/Follows`, `GET /Users/{userId}/Follows/status` |
 | Health | `GET /health/live`, `GET /health/ready`, `GET /health` (ready alias) |
+| Metrics | `GET /metrics` (Prometheus; internal only) |
 
 All endpoints except registration, login, refresh and health require a valid access token.
 
@@ -204,12 +206,57 @@ Trace IDs are surfaced in logs as `TraceId`/`SpanId`, and every request receives
 
 Open `http://localhost:16686`, pick the `SocialMediaAppBackend` service, and inspect the request timelines (including Npgsql spans). Jaeger uses in-memory storage in this setup, so traces are lost when the container restarts.
 
+### Metrics
+
+OpenTelemetry metrics are exposed in Prometheus format at `GET /metrics`. The histogram buckets for `http.server.request.duration` are tuned for accurate p95/p99 latency.
+
+Expected metric names:
+
+- `http_server_request_duration_seconds_bucket`
+- `http_server_request_duration_seconds_sum`
+- `http_server_request_duration_seconds_count`
+- `http_server_active_requests`
+
+The `/metrics` request itself is not counted (`DisableHttpMetrics()`).
+
+Example PromQL:
+
+```promql
+# Request rate by route and method
+sum by (http_route, http_request_method) (
+  rate(http_server_request_duration_seconds_count[5m])
+)
+
+# 5xx error rate
+sum by (http_route, http_request_method) (
+  rate(http_server_request_duration_seconds_count{http_response_status_code=~"5.."}[5m])
+)
+
+# p95 latency
+histogram_quantile(
+  0.95,
+  sum by (le, http_route, http_request_method) (
+    rate(http_server_request_duration_seconds_bucket[5m])
+  )
+)
+
+# p99 latency
+histogram_quantile(
+  0.99,
+  sum by (le, http_route, http_request_method) (
+    rate(http_server_request_duration_seconds_bucket[5m])
+  )
+)
+```
+
+> **Security:** `/metrics` is not protected by authentication. Do not expose it publicly. Prometheus should scrape it over the internal Docker/Kubernetes network. The bundled `Caddyfile` and `k8s/api-ingress.yaml` return `404` for public `/metrics` requests.
+
 ## Tests
 
 Run the test suite with:
 
 ```bash
-dotnet test
+dotnet run --project Tests/SocialMediaAppBackend.Tests.csproj --no-build
 ```
 
 ## Related Project

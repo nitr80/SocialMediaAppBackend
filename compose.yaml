@@ -1,38 +1,5 @@
 # DEVELOPMENT
 
-# services:
-#   db:
-#     image: postgres:18
-#     environment:
-#       POSTGRES_DB: socialmediaapp
-#       POSTGRES_USER: postgres
-#       POSTGRES_PASSWORD: postgres
-#     ports:
-#       - "5432:5432"
-#     volumes:
-#       - postgres-data:/var/lib/postgresql
-#     networks:
-#       - app-network
-
-#   api:
-#     build: .
-#     ports:
-#       - "8080:8080"
-#     depends_on:
-#       - db
-#     environment:
-#       ASPNETCORE_ENVIRONMENT: Development
-#       ASPNETCORE_HTTP_PORTS: 8080
-#       JwtOptions__Key: ${JWT_SECRET}
-#       ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=postgres
-#     networks:
-#       - app-network
-
-# volumes:
-#   postgres-data:
-
-# DEPLOYMENT
-
 services:
   db:
     image: postgres:18

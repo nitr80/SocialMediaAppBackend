@@ -31,7 +31,8 @@ public class ExceptionMiddleware
 
             await httpContext.Response.WriteAsJsonAsync(new
             {
-                message = "An unexpected error occurred"
+                message = "An unexpected error occurred",
+                correlationId = httpContext.Items[CorrelationIdMiddleware.ItemKey]?.ToString()
             });
         }
     }
