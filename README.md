@@ -198,6 +198,12 @@ When no OTLP endpoint is configured:
 
 Trace IDs are surfaced in logs as `TraceId`/`SpanId`, and every request receives an `X-Correlation-ID` response header (client-supplied values are reused when valid).
 
+### Inspecting traces with Docker Compose
+
+`docker compose up` starts a [Jaeger](https://www.jaegertracing.io/) instance alongside the API. The API is pointed at it via `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317`, so traces are exported automatically.
+
+Open `http://localhost:16686`, pick the `SocialMediaAppBackend` service, and inspect the request timelines (including Npgsql spans). Jaeger uses in-memory storage in this setup, so traces are lost when the container restarts.
+
 ## Tests
 
 Run the test suite with:

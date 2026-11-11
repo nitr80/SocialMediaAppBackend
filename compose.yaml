@@ -73,6 +73,8 @@ services:
         condition: service_healthy
       migration:
         condition: service_completed_successfully
+      jaeger:
+        condition: service_started
     expose:
       - "8080"
     environment:
@@ -86,6 +88,15 @@ services:
       BlobStorage__SecretKey: ${BLOB_SECRET_KEY}
       BlobStorage__ServiceUrl: ${BLOB_SERVICE_URL:-}
       BlobStorage__PublicBaseUrl: ${BLOB_PUBLIC_URL:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    networks:
+      - app-network
+
+  jaeger:
+    image: jaegertracing/jaeger:2.23.0
+    restart: unless-stopped
+    ports:
+      - "16686:16686"
     networks:
       - app-network
 
