@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SocialMediaAppBackend.Data;
+using SocialMediaAppBackend.Extensions;
 using SocialMediaAppBackend.Middleware;
 using SocialMediaAppBackend.Options;
 using SocialMediaAppBackend.Services;
@@ -23,6 +24,8 @@ using SocialMediaAppBackend.Services.Interfaces;
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddStructuredLogging();
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
@@ -189,6 +192,7 @@ builder.Services.AddCors(options =>
             policy.WithOrigins(allowedOrigins)
                 .WithMethods("GET", "POST", "PATCH", "DELETE", "OPTIONS")
                 .WithHeaders("Content-Type", "Authorization", "X-Requested-With", "Accept")
+                .WithExposedHeaders("X-Correlation-ID")
                 .AllowCredentials()
                 .SetPreflightMaxAge(TimeSpan.FromHours(1));
         });
@@ -260,6 +264,10 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 
 app.UseSecurityHeaders();
+
+app.UseCorrelationId();
+
+app.UseStructuredRequestLogging();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
