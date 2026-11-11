@@ -19,6 +19,8 @@ A RESTful backend for a social media application, built with **ASP.NET Core** an
 - PostgreSQL database persistence
 - Entity Framework Core migrations
 - Health check endpoint
+- Structured JSON logging with correlation IDs
+- Distributed tracing with OpenTelemetry (ASP.NET Core requests and Npgsql commands)
 
 ## Tech Stack
 
@@ -168,6 +170,33 @@ ConnectionStrings__Default=Host=localhost;Port=5432;Database=socialmediaapp;User
 ```
 
 Migrations are applied automatically when the application starts. The app targets **PostgreSQL 18**.
+
+## Observability
+
+### Distributed tracing
+
+The API is instrumented with **OpenTelemetry**. It emits traces for:
+
+- Incoming ASP.NET Core HTTP requests (excluding `/health*` and `/metrics`).
+- Npgsql database commands issued through EF Core.
+
+Each trace carries `service.name`, `service.version`, `deployment.environment` and `service.instance.id` resource attributes.
+
+Configure an OTLP exporter by setting `OpenTelemetry:OtlpEndpoint` in `appsettings.json`, or the standard environment variable:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+```
+
+- gRPC endpoint example: `http://localhost:4317`
+- HTTP/protobuf endpoint example: `http://localhost:4318`
+
+When no OTLP endpoint is configured:
+
+- In **Development**, traces are printed to the console using the console exporter.
+- In other environments, no exporter is registered and a startup warning is logged.
+
+Trace IDs are surfaced in logs as `TraceId`/`SpanId`, and every request receives an `X-Correlation-ID` response header (client-supplied values are reused when valid).
 
 ## Tests
 

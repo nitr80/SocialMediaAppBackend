@@ -27,6 +27,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddStructuredLogging();
 
+builder.AddDistributedTracing();
+
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.AddServerHeader = false;
@@ -268,6 +270,8 @@ app.UseSecurityHeaders();
 app.UseCorrelationId();
 
 app.UseStructuredRequestLogging();
+
+app.UseObservability();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
