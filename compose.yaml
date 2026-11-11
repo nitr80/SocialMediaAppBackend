@@ -67,6 +67,19 @@ services:
     networks:
       - app-network
 
+  prometheus:
+    image: prom/prometheus:v3.16.0
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - app-network
+
   caddy:
     image: caddy:2
     restart: unless-stopped
@@ -86,6 +99,7 @@ volumes:
   postgres-data:
   caddy-data:
   caddy-config:
+  prometheus-data:
 
 networks:
   app-network:
