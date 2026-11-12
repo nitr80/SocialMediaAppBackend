@@ -22,6 +22,7 @@ A RESTful backend for a social media application, built with **ASP.NET Core** an
 - Structured JSON logging with correlation IDs
 - Distributed tracing with OpenTelemetry (ASP.NET Core requests and Npgsql commands)
 - Prometheus metrics at `/metrics` (request rate, error rate, p95/p99 latency)
+- Pre-wired observability stack (Grafana, Prometheus, Loki, Alloy and Jaeger) for local development via Docker Compose
 
 ## Tech Stack
 
@@ -31,17 +32,32 @@ A RESTful backend for a social media application, built with **ASP.NET Core** an
 - **PostgreSQL**
 - **JWT**
 - **REST API**
+- **OpenTelemetry** (traces, metrics and logs)
+- **Grafana, Prometheus, Loki and Jaeger** (observability stack)
+- **Docker Compose**
 
 ## Project Structure
 
 ```text
-Backend/
+SocialMediaAppBackend/
 ├── Controllers/       # API controllers
 ├── Data/              # Database context and configuration
-├── Models/            # Database entities
 ├── DTOs/              # Data transfer objects
-├── Services/          # Application and authentication logic
+├── Extensions/        # DI and pipeline extensions (logging, tracing, metrics)
+├── Mappings/          # Entity to DTO mappings
+├── Middleware/        # Correlation ID, exception handling and security headers
 ├── Migrations/        # EF Core database migrations
+├── Models/            # Database entities
+├── Options/           # Strongly-typed configuration options
+├── Results/           # Result types returned by services
+├── Services/          # Application and authentication logic
+├── Tests/             # xUnit test suite
+├── alloy/             # Alloy log collector configuration
+├── grafana/           # Grafana provisioning (datasources)
+├── jaeger/            # Jaeger storage configuration
+├── loki/              # Loki configuration
+├── prometheus/        # Prometheus scrape configuration
+├── compose.yaml       # Docker Compose stack
 └── Program.cs         # Application configuration and startup
 ```
 
@@ -150,6 +166,18 @@ cd <repository-directory>
 ```bash
 JWT_SECRET=<your-secret-key>
 POSTGRES_PASSWORD=<your-postgres-password>
+
+# Blob storage (S3-compatible, e.g. Cloudflare R2)
+BLOB_BUCKET_NAME=<your-bucket>
+BLOB_ACCESS_KEY=<your-access-key>
+BLOB_SECRET_KEY=<your-secret-key>
+# Optional
+BLOB_SERVICE_URL=<your-s3-endpoint>
+BLOB_PUBLIC_URL=<your-public-base-url>
+
+# Grafana (optional; defaults to admin/admin)
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin
 ```
 
 3. Start the project using Docker Compose:
@@ -158,7 +186,7 @@ POSTGRES_PASSWORD=<your-postgres-password>
 docker compose up --build
 ```
 
-This will start PostgreSQL, the API, and Caddy as configured in `compose.yaml`.
+This starts the full stack defined in `compose.yaml`: PostgreSQL, a one-shot EF Core migration job, the API, Caddy (reverse proxy on ports 80/443) and the observability backend (Jaeger, Prometheus, Loki, Alloy and Grafana). Grafana is available at `http://localhost:3000`.
 
 ## Configuration
 
@@ -171,9 +199,20 @@ JwtOptions__Key=<your-secret-key>
 ConnectionStrings__Default=Host=localhost;Port=5432;Database=socialmediaapp;Username=postgres;Password=postgres
 ```
 
-Migrations are applied automatically when the application starts. The app targets **PostgreSQL 18**.
+In the Docker Compose stack, a one-shot `migration` service applies the migrations (via the `--migrate` flag) before the API starts. The app targets **PostgreSQL 18**.
 
 ## Observability
+
+The API emits logs, metrics and traces. `docker compose up` also starts a matching observability backend that is pre-provisioned and wired together in Grafana:
+
+| Signal | Component | Internal endpoint |
+| --- | --- | --- |
+| Traces | Jaeger (Badger storage) | `http://jaeger:16686` |
+| Metrics | Prometheus scraping `api:8080/metrics` every 15s | `http://prometheus:9090` |
+| Logs | Alloy (Docker logs) → Loki | `http://loki:3100` |
+| UI | Grafana | `http://localhost:3000` |
+
+Only Grafana (`:3000`) and Caddy (`:80`/`:443`) are published to the host; the other services are reachable over the internal `app-network` or through Grafana.
 
 ### Distributed tracing
 
@@ -202,9 +241,15 @@ Trace IDs are surfaced in logs as `TraceId`/`SpanId`, and every request receives
 
 ### Inspecting traces with Docker Compose
 
-`docker compose up` starts a [Jaeger](https://www.jaegertracing.io/) instance alongside the API. The API is pointed at it via `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317`, so traces are exported automatically.
+`docker compose up` starts a [Jaeger](https://www.jaegertracing.io/) instance alongside the API. The API exports to it via `OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317`, so traces are captured automatically.
 
-Open `http://localhost:16686`, pick the `SocialMediaAppBackend` service, and inspect the request timelines (including Npgsql spans). Jaeger uses in-memory storage in this setup, so traces are lost when the container restarts.
+Jaeger is not published to the host. Open Grafana at `http://localhost:3000`, go to **Explore**, select the **Jaeger** datasource, choose the `SocialMediaAppBackend` service and inspect request timelines (including Npgsql spans). Traces are stored on disk using Badger (the `jaeger-data` volume), so they survive container restarts.
+
+### Logs
+
+The API writes structured JSON logs to stdout (Serilog `CompactJsonFormatter`). In the Compose stack, [Alloy](https://grafana.com/docs/alloy/latest/) tails container logs through the Docker socket and pushes them to [Loki](https://grafana.com/docs/loki/latest/), where they can be queried from Grafana.
+
+Every request log line includes `CorrelationId`, `TraceId`/`SpanId` (emitted as `@tr`/`@sp`) and request metadata, so logs can be correlated with traces.
 
 ### Metrics
 
@@ -249,7 +294,16 @@ histogram_quantile(
 )
 ```
 
-> **Security:** `/metrics` is not protected by authentication. Do not expose it publicly. Prometheus should scrape it over the internal Docker/Kubernetes network. The bundled `Caddyfile` and `k8s/api-ingress.yaml` return `404` for public `/metrics` requests.
+### Grafana
+
+[Grafana](https://grafana.com/grafana/) is pre-provisioned with the three datasources (`Prometheus`, `Loki` and `Jaeger`) so all three signals can be explored side by side at `http://localhost:3000`.
+
+- **Prometheus** is the default datasource. Exemplar storage is enabled and metric exemplars carry the `trace_id` label, which links a metric point to its trace in Jaeger.
+- **Loki** stores the API's JSON logs. Each log line carries the `@tr` trace ID, surfaced as a derived field.
+
+The default credentials are `admin`/`admin`; override them with `GRAFANA_ADMIN_USER` and `GRAFANA_ADMIN_PASSWORD`.
+
+> **Security:** `/metrics` is not protected by authentication. Do not expose it publicly. Prometheus scrapes it over the internal Docker network. The bundled `Caddyfile` returns `404` for public `/metrics` requests.
 
 ## Tests
 

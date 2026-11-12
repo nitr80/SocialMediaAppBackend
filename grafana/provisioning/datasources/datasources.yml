@@ -39,4 +39,4 @@ datasources:
         filterByTraceID: false
         filterBySpanID: false
         customQuery: true
-        query: '{job="docker"} | json | __tr="${__trace.traceId}"'
+        query: '{job="docker"} | json | _tr="${__trace.traceId}"'
