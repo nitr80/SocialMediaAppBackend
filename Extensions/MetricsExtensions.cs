@@ -11,6 +11,7 @@ public static class MetricsExtensions
             .WithMetrics(metrics =>
             {
                 metrics
+                    .SetExemplarFilter(ExemplarFilterType.TraceBased)
                     .AddAspNetCoreInstrumentation()
                     .AddRuntimeInstrumentation()
                     .AddView(
