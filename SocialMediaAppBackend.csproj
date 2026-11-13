@@ -4,9 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- The test project lives under Tests/ so its sources and build output
-         are not globbed into this web project. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);Tests/**</DefaultItemExcludes>
+    <!-- The test projects live under Tests/ and Tests.Integration/ so their
+         sources and build output are not globbed into this web project. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Tests/**;Tests.Integration/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

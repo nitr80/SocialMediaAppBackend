@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -7,6 +7,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialMediaAppBackend.Tests", "Tests\SocialMediaAppBackend.Tests.csproj", "{BCFEB636-8473-4331-B795-EF26C3FA3550}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialMediaAppBackend.Tests.Integration", "Tests.Integration\SocialMediaAppBackend.Tests.Integration.csproj", "{AAC2F2F6-6D62-4035-9299-9DEE59B46A1F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,12 +24,17 @@ Global
 		{BCFEB636-8473-4331-B795-EF26C3FA3550}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCFEB636-8473-4331-B795-EF26C3FA3550}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCFEB636-8473-4331-B795-EF26C3FA3550}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAC2F2F6-6D62-4035-9299-9DEE59B46A1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAC2F2F6-6D62-4035-9299-9DEE59B46A1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAC2F2F6-6D62-4035-9299-9DEE59B46A1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAC2F2F6-6D62-4035-9299-9DEE59B46A1F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BCFEB636-8473-4331-B795-EF26C3FA3550} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{AAC2F2F6-6D62-4035-9299-9DEE59B46A1F} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2818F86E-6127-40E2-869E-5F5BA695A4A0}

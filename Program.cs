@@ -219,6 +219,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // Rate limiting
+int authPermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPermitLimit", 10);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.OnRejected = async (context, cancellationToken) =>
@@ -234,7 +236,7 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = authPermitLimit,
                 Window = TimeSpan.FromMinutes(1)
             }));
 });
@@ -333,3 +335,6 @@ app.MapObservabilityEndpoints();
 app.MapControllers();
 
 app.Run();
+
+// Exposes the entry point to WebApplicationFactory<Program> in the integration tests.
+public partial class Program { }

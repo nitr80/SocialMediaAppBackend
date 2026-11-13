@@ -51,7 +51,8 @@ SocialMediaAppBackend/
 ├── Options/           # Strongly-typed configuration options
 ├── Results/           # Result types returned by services
 ├── Services/          # Application and authentication logic
-├── Tests/             # xUnit test suite
+├── Tests/             # xUnit unit test suite (Docker-free)
+├── Tests.Integration/ # xUnit + Testcontainers integration test suite
 ├── alloy/             # Alloy log collector configuration
 ├── grafana/           # Grafana provisioning (datasources)
 ├── jaeger/            # Jaeger storage configuration
@@ -307,11 +308,24 @@ The default credentials are `admin`/`admin`; override them with `GRAFANA_ADMIN_U
 
 ## Tests
 
-Run the test suite with:
+The solution has two test projects:
+
+- **`Tests/`** — fast unit tests (services and controllers, using SQLite in-memory and Moq). No Docker required.
+- **`Tests.Integration/`** — end-to-end tests that boot the real application through `WebApplicationFactory<Program>` against an ephemeral PostgreSQL container managed by [Testcontainers](https://testcontainers.com/). They exercise the real EF Core migrations and PostgreSQL-specific behavior (`pg_trgm`, the GIN trigram index, `ILIKE` search, `timestamptz`).
+
+Run the unit tests with:
 
 ```bash
 dotnet run --project Tests/SocialMediaAppBackend.Tests.csproj --no-build
 ```
+
+Run the integration tests (requires a running Docker daemon):
+
+```bash
+RUN_INTEGRATION_TESTS=true dotnet test Tests.Integration/SocialMediaAppBackend.Tests.Integration.csproj
+```
+
+The integration tests are opt-in: without `RUN_INTEGRATION_TESTS=true` they are skipped, so a plain `dotnet test` stays Docker-free.
 
 ## Related Project
 
