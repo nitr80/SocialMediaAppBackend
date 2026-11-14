@@ -20,7 +20,7 @@ services:
 
   migration:
     build: .
-    image: nitr80/socialmediaappbackend-api:latest
+    image: nitr80/socialmediaappbackend-api:${IMAGE_TAG:-latest}
     command: ["dotnet", "SocialMediaAppBackend.dll", "--migrate"]
     restart: "no" # Runs once on deploy and terminates
     depends_on:
@@ -33,7 +33,7 @@ services:
 
   api:
     build: .
-    image: nitr80/socialmediaappbackend-api:latest
+    image: nitr80/socialmediaappbackend-api:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       db:

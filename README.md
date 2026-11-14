@@ -189,6 +189,43 @@ docker compose up --build
 
 This starts the full stack defined in `compose.yaml`: PostgreSQL, a one-shot EF Core migration job, the API, Caddy (reverse proxy on ports 80/443) and the observability backend (Jaeger, Prometheus, Loki, Alloy and Grafana). Grafana is available at `http://localhost:3000`.
 
+## Deployment
+
+Pushing to `main` triggers the `Release` workflow (`.github/workflows/release.yaml`), which runs two sequential jobs:
+
+1. **build** — builds the Docker image and pushes it to Docker Hub under two tags: the immutable commit SHA (`nitr80/socialmediaappbackend-api:<git-sha>`) and the moving `:latest` tag.
+2. **deploy** — runs only after `build` succeeds (`needs: build`). It SSHes to the VPS, fast-forwards the checkout in `~/my-api`, and starts the stack pinned to the SHA that was just pushed.
+
+### Immutable image tags
+
+`compose.yaml` does not hard-code `:latest`. Both the `api` and `migration` services resolve their tag from the `IMAGE_TAG` environment variable, falling back to `latest` for local use:
+
+```yaml
+image: nitr80/socialmediaappbackend-api:${IMAGE_TAG:-latest}
+```
+
+The deploy step exports the commit SHA before bringing the stack up, so a deployment always runs a specific, immutable image rather than whatever `:latest` points to at that moment:
+
+```bash
+cd ~/my-api
+git pull --ff-only
+export IMAGE_TAG=<git-sha>
+docker compose pull
+docker compose up -d
+```
+
+### Rollback
+
+Because deploys are pinned to a SHA, rolling back means redeploying a previous SHA — no rebuild required:
+
+```bash
+cd ~/my-api
+IMAGE_TAG=<previous-git-sha> docker compose pull
+IMAGE_TAG=<previous-git-sha> docker compose up -d
+```
+
+Find a previous SHA in `git log` on `main`, or in the tag list for `nitr80/socialmediaappbackend-api` on Docker Hub.
+
 ## Configuration
 
 Application configuration can be provided through `appsettings.json`.
