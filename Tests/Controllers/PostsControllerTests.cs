@@ -33,6 +33,16 @@ public class PostsControllerTests
         };
     }
 
+    private static PostResponseDto SamplePostResponseDto()
+    {
+        return new PostResponseDto
+        {
+            Id = 1,
+            Content = "hello world",
+            Author = new UserPublicDto { Id = 42, Username = "alice" }
+        };
+    }
+
     private static void AssertMessageResult(ObjectResult result, int statusCode, string message)
     {
         Assert.Equal(statusCode, result.StatusCode);
@@ -141,7 +151,7 @@ public class PostsControllerTests
     {
         _postsService
             .Setup(s => s.GetPostById(1, 42, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<Post>.Ok(SamplePost()));
+            .ReturnsAsync(Result<PostResponseDto>.Ok(SamplePostResponseDto()));
 
         var controller = new PostsController(_postsService.Object)
         {
@@ -162,7 +172,7 @@ public class PostsControllerTests
     {
         _postsService
             .Setup(s => s.GetPostById(999, 42, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<Post>.Fail("Post not found", ErrorKind.NotFound));
+            .ReturnsAsync(Result<PostResponseDto>.Fail("Post not found", ErrorKind.NotFound));
 
         var controller = new PostsController(_postsService.Object)
         {
@@ -180,7 +190,7 @@ public class PostsControllerTests
     {
         _postsService
             .Setup(s => s.GetPostById(1, 42, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<Post>.Fail("Not authorized to view this post", ErrorKind.Forbidden));
+            .ReturnsAsync(Result<PostResponseDto>.Fail("Not authorized to view this post", ErrorKind.Forbidden));
 
         var controller = new PostsController(_postsService.Object)
         {

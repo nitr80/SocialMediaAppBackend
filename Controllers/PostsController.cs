@@ -40,14 +40,14 @@ public class PostsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<PostResponseDto>> GetById(int id, CancellationToken cancellationToken = default)
     {
-        Result<Post> result = await _postsService.GetPostById(id, User.GetUserId(), cancellationToken);
+        Result<PostResponseDto> result = await _postsService.GetPostById(id, User.GetUserId(), cancellationToken);
 
         if (!result.Success)
         {
             return result.ToActionResult(this);
         }
 
-        return Ok(PostMappings.ToResponseDto(result.Data!, User.GetUserId()));
+        return Ok(result.Data!);
     }
 
     [Authorize]

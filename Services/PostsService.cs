@@ -28,8 +28,6 @@ public class PostsService : IPostsService
 
         Post createdPost = await _appDbContext.Posts
             .Include(p => p.Author)
-            .Include(p => p.Likes)
-            .Include(p => p.Comments)
             .FirstAsync(p => p.Id == post.Id, cancellationToken);
 
         return Result<Post>.Ok(createdPost);
@@ -141,17 +139,38 @@ public class PostsService : IPostsService
         return Result<PagedList<PostResponseDto>>.Ok(pagedList);
     }
 
-    public async Task<Result<Post>> GetPostById(int postId, int currentUserId, CancellationToken cancellationToken = default)
+    public async Task<Result<PostResponseDto>> GetPostById(int postId, int currentUserId, CancellationToken cancellationToken = default)
     {
-        Post? post = await _appDbContext.Posts
-            .Include(p => p.Author)
-            .Include(p => p.Likes)
-            .Include(p => p.Comments)
-            .FirstOrDefaultAsync(p => p.Id == postId, cancellationToken);
+        // Project the like/comment counts and the caller's like state as SQL
+        // subqueries instead of loading the full Likes/Comments collections into
+        // memory (which would be unbounded for a popular post).
+        var post = await _appDbContext.Posts
+            .Where(p => p.Id == postId)
+            .Select(p => new
+            {
+                p.AuthorId,
+                Dto = new PostResponseDto
+                {
+                    Id = p.Id,
+                    Content = p.Content,
+                    CreatedAt = p.CreatedAt,
+                    LikeCount = p.Likes.Count(),
+                    HasLiked = p.Likes.Any(l => l.UserId == currentUserId),
+                    CommentCount = p.Comments.Count(),
+                    Author = new DTOs.User.UserPublicDto
+                    {
+                        Id = p.Author.Id,
+                        Username = p.Author.Username,
+                        Bio = p.Author.Bio,
+                        ProfileImageUrl = p.Author.ProfileImageUrl
+                    }
+                }
+            })
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (post == null)
         {
-            return Result<Post>.Fail("Post not found", ErrorKind.NotFound);
+            return Result<PostResponseDto>.Fail("Post not found", ErrorKind.NotFound);
         }
 
         bool isFollowing = await _appDbContext.Follows
@@ -159,10 +178,10 @@ public class PostsService : IPostsService
 
         if (!isFollowing && post.AuthorId != currentUserId)
         {
-            return Result<Post>.Fail("Not authorized to view this post", ErrorKind.Forbidden);
+            return Result<PostResponseDto>.Fail("Not authorized to view this post", ErrorKind.Forbidden);
         }
 
-        return Result<Post>.Ok(post);
+        return Result<PostResponseDto>.Ok(post.Dto);
     }
 
 }

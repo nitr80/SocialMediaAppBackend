@@ -136,10 +136,21 @@ builder.Services.AddSingleton<IAmazonS3>(sp =>
 });
 
 // Database
-builder.Services.AddDbContext<AppDbContext>(options =>
+// Pooled contexts avoid re-allocating a DbContext per request. Retry-on-failure
+// makes transient Npgsql connection failures transparent to callers, and a
+// bounded command timeout prevents a stuck query from holding a request open
+// indefinitely.
+builder.Services.AddDbContextPool<AppDbContext>(options =>
 {
-    options.UseNpgsql(connectionString);
-});
+    options.UseNpgsql(connectionString, npgsql =>
+    {
+        npgsql.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null);
+        npgsql.CommandTimeout(30);
+    });
+}, poolSize: 25);
 
 // Options
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));

@@ -82,18 +82,16 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password)
         };
 
-        await _appDbContext.Users.AddAsync(user, cancellationToken);
-        await _appDbContext.SaveChangesAsync(cancellationToken);
-
         string refreshToken = GenerateRefreshToken();
 
         RefreshToken refreshTokenEntity = new RefreshToken
         {
             Token = HashToken(refreshToken),
-            UserId = user.Id,
+            User = user,
             Expires = DateTime.UtcNow.AddDays(7)
         };
 
+        await _appDbContext.Users.AddAsync(user, cancellationToken);
         await _appDbContext.RefreshTokens.AddAsync(refreshTokenEntity, cancellationToken);
         await _appDbContext.SaveChangesAsync(cancellationToken);
 

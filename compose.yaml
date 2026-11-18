@@ -4,6 +4,14 @@ services:
   db:
     image: postgres:18
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
     environment:
       POSTGRES_DB: socialmediaapp
       POSTGRES_USER: postgres
@@ -27,7 +35,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD};Maximum Pool Size=25;Timeout=30
     networks:
       - app-network
 
@@ -35,6 +43,14 @@ services:
     build: .
     image: nitr80/socialmediaappbackend-api:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
     depends_on:
       db:
         condition: service_healthy
@@ -48,7 +64,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: 8080
       JwtOptions__Key: ${JWT_SECRET}
-      ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD};Maximum Pool Size=25;Timeout=30
       BlobStorage__BucketName: ${BLOB_BUCKET_NAME}
       BlobStorage__Region: ${BLOB_REGION:-auto}
       BlobStorage__AccessKey: ${BLOB_ACCESS_KEY}
@@ -71,6 +87,14 @@ services:
   jaeger:
     image: jaegertracing/jaeger:2.23.0
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
     depends_on:
       jaeger-init:
         condition: service_completed_successfully
@@ -84,6 +108,14 @@ services:
   prometheus:
     image: prom/prometheus:v3.16.0
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -99,6 +131,14 @@ services:
   loki:
     image: grafana/loki:3.6.20
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
     command:
       - -config.file=/etc/loki/local-config.yaml
     volumes:
@@ -110,6 +150,14 @@ services:
   alloy:
     image: grafana/alloy:v1.21.3
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
     depends_on:
       - loki
     command:
@@ -127,6 +175,14 @@ services:
   grafana:
     image: grafana/grafana:13.2.6
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
     depends_on:
       - prometheus
       - loki
@@ -146,6 +202,14 @@ services:
   caddy:
     image: caddy:2
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+        reservations:
+          cpus: "0.1"
+          memory: 32M
     ports:
       - "80:80"
       - "443:443"
