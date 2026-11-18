@@ -104,6 +104,40 @@ To create a new migration after changing the data model:
 dotnet ef migrations add <MigrationName>
 ```
 
+### Backups
+
+`compose.yaml` includes a `backup` service that periodically runs `pg_dump` (custom format) and uploads the dump to an S3-compatible bucket (e.g. Cloudflare R2), then deletes dumps older than the retention window. It reuses the same S3-compatible endpoint style as blob storage.
+
+The service is configured through `.env` variables (all optional — when any required value is missing the service starts and idles instead of backing up, so `docker compose up` still works for local development):
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `BACKUP_S3_ENDPOINT` | – | S3/R2 endpoint URL (e.g. `https://<account-id>.r2.cloudflarestorage.com`) |
+| `BACKUP_S3_BUCKET` | – | Bucket that receives the dumps |
+| `BACKUP_S3_ACCESS_KEY` | – | Access key id |
+| `BACKUP_S3_SECRET_KEY` | – | Secret access key |
+| `BACKUP_S3_REGION` | `auto` | Region (`auto` for R2) |
+| `BACKUP_S3_PREFIX` | `backups` | Key prefix inside the bucket |
+| `BACKUP_INTERVAL_SECONDS` | `86400` | Delay between backup cycles |
+| `BACKUP_RETENTION_DAYS` | `7` | Dumps older than this are deleted |
+
+Dumps are stored as `<prefix>/<database>-<UTC timestamp>.dump`.
+
+To restore a dump:
+
+```bash
+# Download the desired dump
+aws s3 cp s3://<bucket>/<prefix>/socialmediaapp-<timestamp>.dump . \
+  --endpoint-url <endpoint>
+
+# Restore into a running PostgreSQL instance (custom format)
+pg_restore --clean --if-exists --no-owner \
+  --dbname "postgresql://postgres:<password>@localhost:5432/socialmediaapp" \
+  socialmediaapp-<timestamp>.dump
+```
+
+The backup service runs continuously as part of the Compose stack; there is nothing else to schedule. To trigger an ad-hoc backup, run the image once with `BACKUP_ONCE=true`.
+
 ## Running the API
 
 You can run the API in one of two ways:
@@ -179,6 +213,17 @@ BLOB_PUBLIC_URL=<your-public-base-url>
 # Grafana (optional; defaults to admin/admin)
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin
+
+# Database backups (optional; S3-compatible, e.g. Cloudflare R2)
+BACKUP_S3_ENDPOINT=<your-s3-endpoint>
+BACKUP_S3_BUCKET=<your-backup-bucket>
+BACKUP_S3_ACCESS_KEY=<your-access-key>
+BACKUP_S3_SECRET_KEY=<your-secret-key>
+# Optional
+BACKUP_S3_REGION=auto
+BACKUP_S3_PREFIX=backups
+BACKUP_INTERVAL_SECONDS=86400
+BACKUP_RETENTION_DAYS=7
 ```
 
 3. Start the project using Docker Compose:
@@ -187,7 +232,7 @@ GRAFANA_ADMIN_PASSWORD=admin
 docker compose up --build
 ```
 
-This starts the full stack defined in `compose.yaml`: PostgreSQL, a one-shot EF Core migration job, the API, Caddy (reverse proxy on ports 80/443) and the observability backend (Jaeger, Prometheus, Loki, Alloy and Grafana). Grafana is available at `http://localhost:3000`.
+This starts the full stack defined in `compose.yaml`: PostgreSQL, a one-shot EF Core migration job, the API, a scheduled database backup job, Caddy (reverse proxy on ports 80/443) and the observability backend (Jaeger, Prometheus, Loki, Alloy and Grafana). Grafana is available at `http://localhost:3000`.
 
 ## Deployment
 
@@ -238,6 +283,8 @@ ConnectionStrings__Default=Host=localhost;Port=5432;Database=socialmediaapp;User
 ```
 
 In the Docker Compose stack, a one-shot `migration` service applies the migrations (via the `--migrate` flag) before the API starts. The app targets **PostgreSQL 18**.
+
+In production, database traffic should be encrypted: append `SSL Mode=Require;Trust Server Certificate=false` to `ConnectionStrings__Default` when the PostgreSQL server has TLS enabled (for example a managed database). The bundled PostgreSQL container does not terminate TLS, so leave these parameters off for local Compose use.
 
 ## Observability
 

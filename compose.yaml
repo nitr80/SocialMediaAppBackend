@@ -35,7 +35,42 @@ services:
       db:
         condition: service_healthy
     environment:
-      ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD};Maximum Pool Size=25;Timeout=30
+      ConnectionStrings__Default: Host=db;Port=5432;Database=socialmediaapp;Username=postgres;Password=${POSTGRES_PASSWORD};Maximum Pool Size=100;Timeout=30
+    networks:
+      - app-network
+
+  # Scheduled pg_dump -> S3/R2 backup. Idles when the BACKUP_* variables are
+  # unset, so it is safe to leave running in development.
+  backup:
+    build:
+      context: .
+      dockerfile: db-backup/Dockerfile
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: socialmediaapp
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      S3_REGION: ${BACKUP_S3_REGION:-auto}
+      S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      S3_PREFIX: ${BACKUP_S3_PREFIX:-backups}
+      AWS_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY:-}
+      AWS_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_KEY:-}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
     networks:
       - app-network
 
